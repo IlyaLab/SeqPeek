@@ -1,4 +1,17 @@
-!function ($) {
+define   (
+[
+    'd3',
+    'vq',
+    'underscore',
+
+    'views/gs/seqpeek_scaling'
+],
+function(
+    d3,
+    vq,
+    _,
+    ScalingFunctions
+) {
     var SeqPeekPrototype = {
         mutationSortFn: function(a, b) {
             var subtype_order = _
@@ -54,218 +67,87 @@
                 .value();
         },
 
+        createTrackStatistics: function(track, array_field_name) {
+            var that = this;
+
+            // Find out the maximum number of mutations in a single location
+            //var max_samples_in_location = _.reduce(track.mutations_by_loc, function(memo, mutation_array, loc) {
+            var max_samples_in_location = _.reduce(track[array_field_name], function(memo, mutation_array, loc) {
+                var len = d3.sum(mutation_array, function(d) {
+                    return d.sample_ids.length;
+                });
+
+                if (len > memo) {
+                    memo = len;
+                }
+
+                return memo;
+            }, 0);
+
+            // Find out the minimum number of mutations in a single location
+            //var min_samples_in_location = _.reduce(track.mutations_by_loc, function(memo, mutation_array, loc) {
+            var min_samples_in_location = _.reduce(track[array_field_name], function(memo, mutation_array, loc) {
+                var len = d3.sum(mutation_array, function(d) {
+                    return d.sample_ids.length;
+                });
+
+                if (len < memo) {
+                    memo = len;
+                }
+
+                return memo;
+            }, max_samples_in_location);
+
+            track.statistics = {
+                min_samples_in_location: min_samples_in_location,
+                max_samples_in_location: max_samples_in_location
+            };
+        },
+
+        _samplesColorByForProteinTrack: function(d, color_by, track) {
+            if (!_.has(d, 'processed_samples')) {
+                d.processed_samples = {
+                    color_by: {}
+                };
+            }
+
+            var grouped,
+                bar_data;
+
+            if (_.isFunction(color_by.group_fn)) {
+                grouped = color_by.group_fn(d.sample_ids);
+            }
+            else {
+                grouped = _.countBy(d.sample_ids, function(s) {
+                    return s.value;
+                });
+            }
+
+            if (color_by.type == 'fract') {
+                bar_data = ScalingFunctions.createFractionalBars(track, color_by, grouped, track.statistics);
+            }
+            else if (color_by.type == 'log2nabs') {
+                bar_data = ScalingFunctions.createLog2Bars(track, color_by, grouped, track.statistics);
+            }
+            else if (color_by.type == 'log2nnorm') {
+                bar_data = ScalingFunctions.createNormalizedLogBars(track, color_by, grouped, track.statistics);
+            }
+            else if (color_by.type == 'linnorm') {
+                bar_data = ScalingFunctions.createNormalizedLinearBars(track, color_by, grouped, track.statistics);
+            }
+            else {
+                console.error('Invalid color_by type \'' + color_by.type + '\'');
+            }
+
+            var data_obj = _.clone(color_by);
+            data_obj.bar_data = bar_data.array;
+            data_obj.category_counts = grouped;
+            d.processed_samples.color_by = data_obj;
+        },
+
         processData: function() {
             var that = this;
             var data = this.data;
-
-            var samplesColorBy = function(d, color_by, track) {
-                if (!_.has(d, 'processed_samples')) {
-                    d.processed_samples = {
-                        color_by: {}
-                    };
-                }
-
-                var createFractionalColorByBars = function(color_by, samples_by_categories) {
-                    var total_samples = _.reduce(samples_by_categories, function(memo, value, key) {
-                        return memo + value;
-                    }, 0);
-
-                    return _.reduce(color_by.group_names, function(memo, group_name) {
-                        if (_.has(samples_by_categories, group_name)) {
-                            var number = samples_by_categories[group_name],
-                                fract = number / total_samples,
-                                height = fract * color_by.max_height;
-
-                            memo.array.push({
-                                height: height,
-                                color: color_scale(group_name),
-                                y: memo.current_y
-                            });
-
-                            memo.current_y += height;
-                        }
-
-                        return memo;
-                    }, {
-                        array: [],
-                        current_y: 0
-                    });
-                };
-
-                var createStackedLogColorByBars = function(color_by, samples_by_categories) {
-                    var category_max_height = color_by.max_height / _.keys(samples_by_categories).length,
-                        total_samples = _.reduce(samples_by_categories, function(memo, value, key) {
-                            return memo + value;
-                        }, 0);
-
-                    var log_scale = d3.scale
-                        .log()
-                        .domain([1.0, total_samples])
-                        .range([5, color_by.max_height]);
-
-                    var bars = _.reduce(color_by.group_names, function(memo, group_name) {
-                        if (_.has(samples_by_categories, group_name)) {
-                            var number = grouped[group_name],
-                                height = d3.max([1.0, category_max_height * (number / total_samples)]);
-
-                            if (number > 0) {
-                                memo.array.push({
-                                    height: height,
-                                    color: color_by.color_scale(group_name),
-                                    y: memo.current_y
-                                });
-
-                                memo.current_y += height;
-                            }
-                        }
-
-                        return memo;
-                    }, {
-                        array: [],
-                        current_y: 0
-                    });
-
-                    var total_height = log_scale(bars.current_y),
-                        k = total_height / bars.current_y;
-
-                    return _.reduce(bars.array, function(memo, bar) {
-                        var height = k * bar.height;
-
-                        memo.array.push({
-                            height: height,
-                            color: bar.color,
-                            y: memo.current_y
-                        });
-
-                        memo.current_y += height;
-
-                        return memo;
-                    },{
-                        array: [],
-                        current_y: 0
-                    });
-                };
-
-                var createStackedLogAggregateColorByBars = function(color_by, samples_by_categories, track_data) {
-                    var total_samples = track_data.data.max_samples;
-
-                    var log_scale = d3.scale
-                        .log()
-                        .domain([1.0, total_samples])
-                        .range([5, color_by.max_height]);
-
-                    var bars = _.reduce(color_by.group_names, function(memo, group_name) {
-                        if (_.has(samples_by_categories, group_name)) {
-                            var number = grouped[group_name],
-                                //height = d3.max([1.0, category_max_height * (number / total_samples)]);
-                                height = log_scale(number);
-
-                            if (number > 0) {
-                                memo.array.push({
-                                    height: height,
-                                    color: color_by.color_scale(group_name),
-                                    y: memo.current_y
-                                });
-
-                                memo.current_y += height;
-                            }
-                        }
-
-                        return memo;
-                    }, {
-                        array: [],
-                        current_y: 0
-                    });
-
-                    return bars;
-                };
-
-                var createStackedNormalizedLogColorByBars = function(color_by, samples_by_categories) {
-                    var category_sizes = color_by.category_sizes,
-                        category_max_height = color_by.max_height / _.keys(category_sizes).length;
-
-                    var log_scale = d3.scale
-                        .log()
-                        .domain([1.0, color_by.category_sum])
-                        .range([5, color_by.max_height]);
-
-                    var bars = _.reduce(color_by.group_names, function(memo, group_name) {
-                        if (_.has(samples_by_categories, group_name)) {
-                            var number = grouped[group_name],
-                                cat_size = category_sizes[group_name],
-                                height = d3.max([1.0, category_max_height * (number / cat_size)]);
-
-                            if (number > 0) {
-                                memo.array.push({
-                                    height: height,
-                                    color: color_by.color_scale(group_name),
-                                    y: memo.current_y
-                                });
-
-                                memo.current_y += height;
-                            }
-                        }
-
-                        return memo;
-                    }, {
-                        array: [],
-                        current_y: 0
-                    });
-
-                    var total_height = log_scale(bars.current_y),
-                        k = total_height / bars.current_y;
-
-                    return _.reduce(bars.array, function(memo, bar) {
-                        var height = k * bar.height;
-
-                        memo.array.push({
-                            height: height,
-                            color: bar.color,
-                            y: memo.current_y
-                        });
-
-                        memo.current_y += height;
-
-                        return memo;
-                    },{
-                        array: [],
-                        current_y: 0
-                    });
-                };
-
-                var grouped,
-                    bar_data;
-
-                if (_.isFunction(color_by.group_fn)) {
-                    grouped = color_by.group_fn(d.sample_ids, d);
-                }
-                else {
-                    grouped = _.countBy(d.sample_ids, function(s) {
-                        return s.value;
-                    });
-                }
-
-                if (color_by.type == 'fract') {
-                    bar_data = createFractionalColorByBars(color_by, grouped);
-                }
-                else if (color_by.type == 'log10n') {
-                    bar_data = createStackedLogColorByBars(color_by, grouped);
-                }
-                else if (color_by.type == 'log10naggr') {
-                     bar_data = createStackedLogAggregateColorByBars(color_by, grouped, track);
-                 }
-                else if (color_by.type == 'log10nnorm') {
-                    bar_data = createStackedNormalizedLogColorByBars(color_by, grouped);
-                }
-                else {
-                    console.error('Invalid color_by type \'' + color_by.type + '\'');
-                }
-
-                var data_obj = _.clone(color_by);
-                data_obj.bar_data = bar_data.array;
-                data_obj.category_counts = grouped;
-                d.processed_samples.color_by.color_by = data_obj;
-            };
 
             var processSamples = function(entries) {
                 var mutation_data = _.extend({}, entries[0], {}),
@@ -285,7 +167,6 @@
 
             data.subtype_to_index_map = {};
 
-
             _.each(data.tracks, function(track, index) {
                 data.subtype_to_index_map[track.label] = index;
 
@@ -297,30 +178,6 @@
                         .groupBy('location')
                         .value();
 
-                    if (track.type == 'samples') {
-                        // If 'Color By' functionality is enabled, calculate needed statistics
-                        if (_.has(track, 'color_by') && track.color_by.type != 'none') {
-                            _.each(mutations_by_loc, function(mutations, location) {
-                                _.each(mutations, function(m) {
-                                    samplesColorBy(m, track.color_by, track);
-                                });
-                            });
-                        }
-                    }
-                    else if (track.type == 'location') {
-                        // If 'Color By' functionality is enabled, calculate needed statistics
-                        if (_.has(track, 'color_by') && track.color_by.type != 'none') {
-                            _.each(mutations_by_loc, function(mutations, location) {
-                                _.each(mutations, function(m) {
-                                    samplesColorBy(m, track.color_by, track);
-                                });
-                            });
-                        }
-                    }
-                    else {
-                        console.error('Invalid track type \'' + track.type + '\'');
-                    }
-
                     // Create flat array of all mutations
                     var all_mutations = [];
 
@@ -330,15 +187,23 @@
 
                     track.mutations_by_loc = mutations_by_loc;
                     track.mutations_processed = all_mutations;
+
+                    that.createTrackStatistics(track, 'mutations_by_loc');
+
+                    // If 'Color By' functionality is enabled, calculate needed statistics
+                    if (_.has(track, 'color_by') && track.color_by.type != 'none') {
+                        _.each(mutations_by_loc, function(mutations, location) {
+                            _.each(mutations, function(m) {
+                                that._samplesColorByForProteinTrack(m, track.color_by, track);
+                            });
+                        });
+                    }
                 }
 
                 var default_layout = {
                     background_ticks: {
                         y1: 0,
                         y2: 0
-                    },
-                    mutation_stems: {
-                        enabled: false
                     },
                     mutations: {
                         y: 0
@@ -360,14 +225,15 @@
 
                 track.layout = _.extend(default_layout, track.layout);
 
-                track.tooltips.location.hovercard = vq.hovercard({
+                track.tooltips.hovercard = vq.hovercard({
                     canvas_id: that.config.guid,
                     include_header: false,
                     include_footer: true,
                     self_hover: true,
                     timeout: 200,
-                    data_config: track.tooltips.location.items,
-                    tool_config: []
+                    param_data: true,
+                    data_config: track.tooltips.items,
+                    tool_config: track.tooltips.links
                 });
             });
 
@@ -387,9 +253,11 @@
                     return memo;
                 }, {})
                 .value();
+
+            this.alignMutationsForProteinTrack();
         },
 
-        doSubtypeLayout: function(track, config, param_layout) {
+        _getDimensionsForProteinTrack: function(track, config, param_layout) {
             var that = this;
             var layout = param_layout || _.extend({}, track.layout);
 
@@ -406,7 +274,7 @@
 
             var colorByBarsSamplesHeightFn = function(mutations_processed) {
                 return d3.max(mutations_processed, function(m) {
-                    return _.reduce(m.processed_samples.color_by.color_by.bar_data,
+                    return _.reduce(m.processed_samples.color_by.bar_data,
                         function(total, d) {
                             return total + d.height;
                         }, 0);
@@ -414,19 +282,14 @@
             };
 
             // Resolve the maximum height of the mutation shape stack including stems if needed
-            if (track.type == 'samples') {
-                if (_.has(track, 'color_by')) {
-                    mutations_height = colorByBarsSamplesHeightFn(track.mutations_processed);
-                }
-                else {
-                    mutations_height = stackedSamplesHeightFn(track.mutations_processed);
-                }
+            if (_.has(track, 'color_by')) {
+                mutations_height = colorByBarsSamplesHeightFn(track.mutations_processed);
             }
             else {
-                return 150;
+                mutations_height = stackedSamplesHeightFn(track.mutations_processed);
             }
 
-            if (track.layout.mutation_stems.enabled === true) {
+            if (config.enable_mutation_stems === true) {
                 mutations_height = mutations_height + config.mutation_groups.stems.height;
             }
 
@@ -447,7 +310,7 @@
             layout.protein_scale_line.y = layout.mutations.y;
 
             // If stems are not drawn, move the scale line down so that it will not overlap with the mutation shapes
-            if (track.layout.mutation_stems.enabled === false) {
+            if (config.enable_mutation_stems === false) {
                 layout.protein_scale_line.y += config.mutation_shape_width / 2.0;
             }
 
@@ -469,6 +332,21 @@
             return layout;
         },
 
+        getTrackDimension: function(track, config, param_layout)  {
+            var self = this;
+
+            if (track.type == 'protein') {
+                return self._getDimensionsForProteinTrack(track, config, param_layout);
+            }
+            else if (track.type == 'genomic') {
+                return self._getDimensionsForGenomicTrack(track, config, param_layout);
+            }
+            else {
+                console.error("Unknown track type \'" + track.type + "\'");
+                return null;
+            }
+        },
+
         updateVerticalScaleRanges: function() {
             var that = this;
             var data = this.data;
@@ -476,7 +354,7 @@
             var current_y = 0;
 
             _.each(data.tracks, function(subtype) {
-                var layout = that.doSubtypeLayout(subtype, that.config);
+                var layout = that.getTrackDimension(subtype, that.config);
 
                 layout.y = current_y;
                 _.extend(subtype.layout, layout);
@@ -521,14 +399,12 @@
                 y: 0
             };
 
-
-            // TODO fix
             var test_config = _.extend({}, that.config, {
                 enable_mutation_stems: true
             });
 
             _.each(data.tracks, function(subtype) {
-                var layout = that.doSubtypeLayout(subtype, test_config, test_layout);
+                var layout = that.getTrackDimension(subtype, test_config, test_layout);
 
                 // TODO
                 max_height += (layout.height + that.config.protein_scale.vertical_padding);
@@ -595,8 +471,6 @@
                 y: 0
             };
 
-
-            // TODO fix
             var test_config = _.extend({}, that.config, {
                 enable_mutation_stems: true
             });
@@ -605,7 +479,7 @@
             _.chain(data.tracks)
                 .initial()
                 .each(function(track) {
-                    layout = that.doSubtypeLayout(track, test_config, default_layout);
+                    layout = that.getTrackDimension(track, test_config, default_layout);
                     // TODO
                     // Size of the data-area element becomes correct, but the vertical padding
                     // is not actually applied to be present between the tracks.
@@ -613,7 +487,7 @@
                 });
 
             // Add height of the last cancer
-            layout = that.doSubtypeLayout(_.last(data.tracks), test_config, last_layout);
+            layout = that.getTrackDimension(_.last(data.tracks), test_config, last_layout);
             max_height += layout.height;
 
             return {
@@ -630,13 +504,17 @@
         },
 
         draw: function(data, param_config) {
-            var that = this;
+            var that = this,
+                protein_domain_ids;
+
             this.config.target_el.innerHTML = "";
             this.data = data;
 
             _.extend(this.config, param_config);
 
             this.processData();
+            this.processDataGenomic();
+
             this.vis = {
                 refs: {
                     labels: {},
@@ -649,10 +527,18 @@
             this.vis.ref_scale = d3.scale.linear().domain([0, data.protein.length]).range([0, this.config.protein_scale.width]);
 
             // Ordinal scale for vertically positioning InterPro signatures
-            var protein_domain_ids = _.uniq(_.pluck(data.protein.domains, this.config.protein_domains.key));
-            this.vis.domain_scale = d3.scale.ordinal().domain(protein_domain_ids).rangeBands([0, protein_domain_ids.length * this.config.signature_height]);
-
-            //this.updateVerticalScaleRanges();
+            if (_.has(this.config.protein_domains, 'order') && _.isArray(this.config.protein_domains.order)) {
+                protein_domain_ids = this.config.protein_domains.order;
+                this.vis.domain_scale = d3.scale.ordinal()
+                    .domain(protein_domain_ids)
+                    .rangeBands([0, protein_domain_ids.length * (this.config.signature_height + 1)]);
+            }
+            else {
+                protein_domain_ids = _.uniq(_.pluck(data.protein.domains, this.config.protein_domains.key));
+                this.vis.domain_scale = d3.scale.ordinal()
+                    .domain(protein_domain_ids)
+                    .rangeBands([0, protein_domain_ids.length * (this.config.signature_height + 1)]);
+            }
 
             var size_info = this.getDefaultVisualizationSize();
             this.updateVerticalScaleRanges();
@@ -663,11 +549,11 @@
             this.vis.viewport_scale = [1, 1];
             this.vis.viewport_pos = [0, 0];
 
+            this.vis.visible_coordinates = [0, 1500];
+
             // Align mutations and calculate screen locations, then
             // set viewport such that all mutations are visible initially.
-            this.alignMutations();
-            this.updateMutationLayout(this.vis.ref_scale);
-            this.setInitialViewport();
+            //this.setInitialViewport();
 
             this.vis.zoom = d3.behavior.zoom()
                 .translate(this.vis.viewport_pos)
@@ -678,51 +564,51 @@
 
             this.vis.root = d3.select(this.config.target_el)
                 .append("svg")
-                    .attr("id", this.config.guid)
-                    .attr("width", (2 * this.config.plot.horizontal_padding + size_info.width))
-                    .attr("height", (2 * this.config.plot.vertical_padding + size_info.height))
-                    .style("pointer-events", "none");
+                .attr("id", this.config.guid)
+                .attr("width", (2 * this.config.plot.horizontal_padding + size_info.width))
+                .attr("height", (2 * this.config.plot.vertical_padding + size_info.height))
+                .style("pointer-events", "none");
 
             // Area for labels
             this.vis.root
                 .append("g")
-                    .attr("class", "label-area")
-                    .attr("width", this.config.band_label_width)
-                    .attr("height", size_info.height)
-                    .attr("transform", "translate(" + this.config.plot.horizontal_padding + "," + this.config.plot.vertical_padding + ")")
-                    .style("pointer-events", "all");
+                .attr("class", "label-area")
+                .attr("width", this.config.band_label_width)
+                .attr("height", size_info.height)
+                .attr("transform", "translate(" + this.config.plot.horizontal_padding + "," + this.config.plot.vertical_padding + ")")
+                .style("pointer-events", "all");
 
             // Area for scale lines, reference lines and tick marks
             this.vis.root
                 .append("g")
-                    .attr("class", "panel-area")
-                    .attr("x", 0.0)
-                    .attr("y", 0.0)
-                    .attr("width", this.vis.viewport_size[0])
-                    .attr("height", this.vis.viewport_size[1])
-                    .attr("transform", "translate(" + (this.config.plot.horizontal_padding + this.config.band_label_width) + "," + this.config.plot.vertical_padding + ")")
-                    .style("pointer-events", "none");
+                .attr("class", "panel-area")
+                .attr("x", 0.0)
+                .attr("y", 0.0)
+                .attr("width", this.vis.viewport_size[0])
+                .attr("height", this.vis.viewport_size[1])
+                .attr("transform", "translate(" + (this.config.plot.horizontal_padding + this.config.band_label_width) + "," + this.config.plot.vertical_padding + ")")
+                .style("pointer-events", "none");
 
             // Area for graphical elements with clipping
             this.vis.root
                 .append("svg:svg")
-                    .attr("class", "data-area")
-                    .attr("x", (this.config.plot.horizontal_padding + this.config.band_label_width))
-                    .attr("y", (this.config.plot.vertical_padding))
-                    .attr("width", this.vis.viewport_size[0])
-                    .attr("height", this.vis.viewport_size[1])
-                    .style("pointer-events", "all");
+                .attr("class", "data-area")
+                .attr("x", (this.config.plot.horizontal_padding + this.config.band_label_width))
+                .attr("y", (this.config.plot.vertical_padding))
+                .attr("width", this.vis.viewport_size[0])
+                .attr("height", this.vis.viewport_size[1])
+                .style("pointer-events", "all");
 
             // Rectangle for mouse events
             this.vis.root
                 .selectAll(".data-area")
                 .append("svg:rect")
-                    .attr("class", "zoom-rect")
-                    .attr("x", 0)
-                    .attr("y", 0)
-                    .attr("width", this.vis.viewport_size[0])
-                    .attr("height", this.vis.viewport_size[1])
-                    .style("fill-opacity", 0.0)
+                .attr("class", "zoom-rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", this.vis.viewport_size[0])
+                .attr("height", this.vis.viewport_size[1])
+                .style("fill-opacity", 0.0)
                 .call(this.vis.zoom);
 
             // Calculate scale factor for protein domains to 100% viewport
@@ -750,16 +636,41 @@
             this.vis.viewport_scale = [e.scale, 0.0];
             this.vis.viewport_pos = e.translate;
 
-            this.applyViewportChange();
+            this._scrollProteinTracks();
+
+            this._scrollRegions();
         },
 
         setInitialViewport: function() {
+
+
             // Find maximum extent
-            var left = d3.min(this.data.tracks, function(d) {
-                return d.mutation_layout.extent.left;
+            var left = d3.min(this.data.tracks, function(track) {
+                if (! _.has(track, 'mutation_layout') && ! _.has(track, 'variant_layout')) {
+                    console.error("setInitialViewport: Track does not mutation or variant layout");
+                    return {};
+                }
+
+                if (_.has(track, 'mutation_layout')) {
+                    return track.mutation_layout.extent.left;
+                }
+                else if (_.has(track, 'variant_layout')) {
+                    return track.variant_layout.extent.left;
+                }
             });
-            var right = d3.max(this.data.tracks, function(d) {
-                return d.mutation_layout.extent.right;
+            var right = d3.max(this.data.tracks, function(track) {
+                if (! _.has(track, 'mutation_layout') && ! _.has(track, 'variant_layout')) {
+                    console.error("setInitialViewport: Track does not mutation or variant layout");
+                    return {};
+                }
+
+                //return d.mutation_layout.extent.right;
+                if (_.has(track, 'mutation_layout')) {
+                    return track.mutation_layout.extent.right;
+                }
+                else if (_.has(track, 'variant_layout')) {
+                    return track.variant_layout.extent.right;
+                }
             });
 
             var x_translate = Math.abs(d3.min([left, 0.0]));
@@ -830,39 +741,30 @@
             var track_content_g = this.vis.root
                 .selectAll(".data-area")
                 .selectAll("g.seqpeek-track")
-                    .data(data.tracks, function(d) {
-                        return d.label;
-                    });
+                .data(data.tracks, function(d) {
+                    return d.label;
+                });
 
             var tracks_enter = track_content_g.enter();
             var tracks_exit = track_content_g.exit();
 
             var track = tracks_enter
                 .append("g")
-                    .attr("class", "seqpeek-track")
-                    .attr("height", function(d) {
-                        return d.layout.subtype_height;
-                    })
-                    .attr("transform", function(d) {
-                        return "translate(0," + d.layout.y + ")";
-                    })
-                    .style("opacity", 1e-6);
+                .attr("class", "seqpeek-track")
+                .attr("height", function(d) {
+                    return d.layout.subtype_height;
+                })
+                .attr("transform", function(d) {
+                    return "translate(0," + d.layout.y + ")";
+                })
+                .style("opacity", 1e-6);
 
             track
                 .append("g")
-                    .attr("class", "protein")
-                    .attr("transform", "translate(0,0)");
-
-            if (that.config.enable_transitions) {
-                track_content_g = track_content_g
-                    .transition()
-                    .duration(500);
-
-                tracks_exit = tracks_exit
-                    .transition()
-                    .duration(500)
-                    .style("opacity", 1e-6);
-            }
+                .attr("class", function(d) {
+                    return d.type;
+                })
+                .attr("transform", "translate(0,0)");
 
             // Update
             track_content_g
@@ -879,6 +781,7 @@
                 .remove();
 
             this.vis.refs.symbols.protein = this.vis.root.selectAll(".data-area g.protein");
+            this.vis.refs.symbols.genomic = this.vis.root.selectAll(".data-area g.genomic");
 
             // ------
             // Labels
@@ -886,44 +789,38 @@
             track_content_g = this.vis.root
                 .selectAll("g.label-area")
                 .selectAll("g.seqpeek-track")
-                    .data(data.tracks, function(d) {
-                        return d.label;
-                    });
+                .data(data.tracks, function(d) {
+                    return d.label;
+                });
 
             tracks_enter = track_content_g.enter();
             tracks_exit = track_content_g.exit();
 
             track = tracks_enter
                 .append("g")
-                    .attr("class", "seqpeek-track")
-                    .attr("height", function(d) {
-                        return d.layout.subtype_height;
-                    })
-                    .attr("transform", function(d) {
-                        return "translate(0," + d.layout.y + ")";
-                    })
-                    .style("opacity", 1e-6);
+                .attr("class", "seqpeek-track")
+                .attr("height", function(d) {
+                    return d.layout.subtype_height;
+                })
+                .attr("transform", function(d) {
+                    return "translate(0," + d.layout.y + ")";
+                })
+                .style("opacity", 1e-6);
 
             track
                 .append("text")
-                    .attr("left", 0)
-                    .attr("y", function(d) {
-                        return d.layout.label_y;
-                    })
-                    .text(function(d) {
-                        return d.label;
-                    });
-
-            if (that.config.enable_transitions) {
-                track_content_g = track_content_g
-                    .transition()
-                    .duration(500);
-
-                tracks_exit = tracks_exit
-                    .transition()
-                    .duration(500)
-                    .style("opacity", 1e-6);
-            }
+                .attr("left", 0)
+                .attr("y", function(d) {
+                    return d.layout.label_y;
+                })
+                .text(function(d) {
+                    return d.label;
+                }).on("mouseover", function(d) {
+                    if (_.has(d, 'label_mouseover_handler')) {
+                        var handler = d.label_mouseover_handler;
+                        handler(d);
+                    }
+                });
 
             // Update
             track_content_g
@@ -945,45 +842,45 @@
             track_content_g = this.vis.root
                 .selectAll("g.panel-area")
                 .selectAll("g.seqpeek-track")
-                    .data(data.tracks, function(d) {
-                        return d.label;
-                    });
+                .data(data.tracks, function(d) {
+                    return d.label;
+                });
 
             tracks_enter = track_content_g.enter();
             tracks_exit = track_content_g.exit();
 
             track = tracks_enter
                 .append("g")
-                    .attr("class", "seqpeek-track")
-                    .attr("height", function(d) {
-                        return d.layout.subtype_height;
-                    })
-                    .attr("transform", function(d) {
-                        return "translate(0," + d.layout.y + ")";
-                    })
-                    .style("opacity", 1e-6);
+                .attr("class", "seqpeek-track")
+                .attr("height", function(d) {
+                    return d.layout.subtype_height;
+                })
+                .attr("transform", function(d) {
+                    return "translate(0," + d.layout.y + ")";
+                })
+                .style("opacity", 1e-6);
 
             track
-                .append("g")
-                    .attr("class", "protein")
-                    .attr("transform", "translate(0,0)")
-                // Vertical reference lines on the protein scale
-                .append("g")
-                    .attr("class", "background-ticks")
-                    .attr("transform", function(d) {
-                        return "translate(0," + (d.layout.mutations.y) + ")";
-                    });
-
-            if (that.config.enable_transitions) {
-                track_content_g = track_content_g
-                    .transition()
-                    .duration(500);
-
-                tracks_exit = tracks_exit
-                    .transition()
-                    .duration(500)
-                    .style("opacity", 1e-6);
-            }
+                .each(function(d) {
+                    if (d.type == 'protein') {
+                        d3.select(this)
+                            .append("g")
+                            .attr("class", "protein")
+                            .attr("transform", "translate(0,0)")
+                            // Vertical reference lines on the protein scale
+                            .append("g")
+                            .attr("class", "background-ticks")
+                            .attr("transform", function(d) {
+                                return "translate(0," + (d.layout.mutations.y) + ")";
+                            });
+                    }
+                    else if (d.type == 'genomic') {
+                        d3.select(this)
+                            .append("g")
+                            .attr("class", "genomic")
+                            .attr("transform", "translate(0,0)");
+                    }
+                });
 
             // Update
             track_content_g
@@ -1000,22 +897,10 @@
                 .remove();
 
             this.vis.refs.panel.protein = this.vis.root.selectAll(".panel-area g.protein");
+            this.vis.refs.panel.genomic = this.vis.root.selectAll(".panel-area g.genomic");
 
             this.applyLayoutChange();
-        },
-
-        updateTrackPositions: function() {
-            this.vis.root
-                .selectAll(".data-area")
-                .selectAll("g.seqpeek-track")
-                    .transition()
-                    .duration(500)
-                    .attr("height", function(d) {
-                        return d.layout.subtype_height;
-                    })
-                    .attr("transform", function(d) {
-                        return "translate(0," + d.layout.y + ")";
-                    });
+            this.applyLayoutGenomic();
         },
 
         applyLayoutChange: function() {
@@ -1034,7 +919,32 @@
             this.applyStems();
         },
 
-        applyViewportChange: function() {
+        applyLayoutGenomic: function() {
+            var that = this;
+
+            _.chain(this.data.tracks)
+
+                .filter(function(d) {
+                    return d.type == 'genomic';
+                })
+                .each(function(track) {
+                    track.region_metadata = that.regionLayout(track.region_data);
+                });
+
+            this.vis.visible_genomic_coordinates = this._getVisibleCoordinates();
+
+            this.updateVariantScreenLocationsForAllTracks();
+
+            this.vis.refs.symbols.genomic.call(this.applyGeneRegions);
+            this.vis.refs.panel.genomic.call(this.applyGeneRegions);
+
+
+            this.renderCodingRegions();
+            this.renderVariantGroups();
+            this.renderVariantStems();
+        },
+
+        _scrollProteinTracks: function() {
             this.updateTickScale();
 
             this.updateReferenceLines();
@@ -1058,17 +968,17 @@
                         .select(this)
                         .selectAll(".protein")
                         .selectAll("g.mutations")
-                            .data(function(d) {
-                                return [d];
-                            }, function(d) {
-                                return d.label;
-                            });
+                        .data(function(d) {
+                            return [d];
+                        }, function(d) {
+                            return d.label;
+                        });
 
                     mutation_group
                         .enter()
                         .append("g")
-                            .attr("class", "mutations")
-                            .style("opacity", 1e-6);
+                        .attr("class", "mutations")
+                        .style("opacity", 1e-6);
 
                     mutation_group
                         .attr("transform", function(d) {
@@ -1078,7 +988,7 @@
                             // 2. scale (<viewport x scale>, -1)
                             var trs =
                                 "translate(" + (that.vis.viewport_pos[0]) + "," + (d.layout.mutations.y) + ")" +
-                                "scale(" + that.vis.viewport_scale[0] + ", -1)";
+                                    "scale(" + that.vis.viewport_scale[0] + ", -1)";
 
                             return trs;
                         })
@@ -1100,27 +1010,27 @@
                         .select(this)
                         .selectAll(".protein")
                         .selectAll("g.domains")
-                            .data(function(d) {
-                                return d.layout.protein_domains.enabled === true ? [data.protein.domains] : [];
-                            });
+                        .data(function(d) {
+                            return d.layout.protein_domains.enabled === true ? [data.protein.domains] : [];
+                        });
 
                     domains
                         .enter()
                         .append("g")
-                            .attr("class", "domains")
-                            .attr("transform", function() {
-                                // Transform:
-                                //
-                                // 1. translate (<viewport x>, <domain placement y>)
-                                // 2. scale (<domain rectangle to 100% viewport>, 0)
-                                // 3. scale (<viewport x scale>, -1)
-                                var trs =
-                                    "translate(" + (that.vis.viewport_pos[0]) + "," + (track_data.layout.protein_domains.y) + ")" +
+                        .attr("class", "domains")
+                        .attr("transform", function() {
+                            // Transform:
+                            //
+                            // 1. translate (<viewport x>, <domain placement y>)
+                            // 2. scale (<domain rectangle to 100% viewport>, 0)
+                            // 3. scale (<viewport x scale>, -1)
+                            var trs =
+                                "translate(" + (that.vis.viewport_pos[0]) + "," + (track_data.layout.protein_domains.y) + ")" +
                                     "scale(" + that.vis.viewport_scale[0] * that.vis.domain_rect_scale_factor + ", -1)";
 
-                                return trs;
-                            })
-                            .style("opacity", 1e-6);
+                            return trs;
+                        })
+                        .style("opacity", 1e-6);
 
                     var domains_exit = domains.exit();
 
@@ -1132,13 +1042,6 @@
 
                     domains
                         .style("opacity", 1.0);
-
-                    if (that.config.enable_transitions) {
-                        domains_exit = domains_exit
-                            .transition()
-                            .duration(500)
-                            .style("opacity", 1e-6);
-                    }
 
                     domains_exit
                         .remove();
@@ -1159,12 +1062,6 @@
                         .selectAll(".protein")
                         .selectAll("g.background-ticks");
 
-                    if (that.config.enable_transitions) {
-                        background_lines = background_lines
-                            .transition()
-                            .duration(500);
-                    }
-
                     background_lines
                         .attr("transform", function(d) {
                             return "translate(0," + (d.layout.mutations.y) + ")";
@@ -1177,27 +1074,21 @@
                         .select(this)
                         .selectAll(".protein")
                         .selectAll("g.scale")
-                            .data(function(d) {
-                                return (d.layout.protein_scale_ticks.enabled ||
-                                    d.layout.protein_scale_line.enabled) === true ? [track_data] : [];
-                            });
+                        .data(function(d) {
+                            return (d.layout.protein_scale_ticks.enabled ||
+                                d.layout.protein_scale_line.enabled) === true ? [track_data] : [];
+                        });
 
                     protein_scales
                         .enter()
                         .append("g")
-                            .attr("class", "scale")
-                            .attr("transform", function() {
-                                return "translate(0," + (track_data.layout.protein_scale_ticks.y) + ")";
-                            })
-                            .style("opacity", 1e-6);
+                        .attr("class", "scale")
+                        .attr("transform", function() {
+                            return "translate(0," + (track_data.layout.protein_scale_ticks.y) + ")";
+                        })
+                        .style("opacity", 1e-6);
 
                     var protein_scales_exit = protein_scales.exit();
-
-                    if (that.config.enable_transitions) {
-                        protein_scales = protein_scales
-                            .transition()
-                            .duration(500);
-                    }
 
                     protein_scales
                         .attr("transform", function() {
@@ -1205,68 +1096,86 @@
                         })
                         .style("opacity", 1.0);
 
-                    if (that.config.enable_transitions) {
-                        protein_scales_exit = protein_scales_exit
-                            .transition()
-                            .duration(500)
-                            .style("opacity", 1e-6);
-                    }
-
                     protein_scales_exit
                         .remove();
                 });
         },
 
-        alignMutations: function() {
+        applyGeneRegions: function(selection) {
+            selection
+                .each(function() {
+                    d3.select(this)
+                        .selectAll("g.region")
+                        .data(function(d) {
+                            return d.region_data;
+                        })
+                        .enter()
+                        .append("g")
+                        .attr("class", function(d) {
+                            return "region " + d.type
+                        })
+                        .attr("transform", function(d) {
+                            return "translate(" + d.layout.screen_x + ",0)";
+                        });
+                });
+        },
+
+        _buildLocationGroups: function(mutations_by_loc) {
             var that = this;
-            var data = this.data;
             var mutationIdFn = this.mutationIdFn;
 
-            var buildLocationGroups = function(mutations_by_loc) {
-                return _
-                    .chain(mutations_by_loc)
-                    .map(function(mutations, location) {
-                        var group,
-                            scale = d3.scale.ordinal();
+            return _
+                .chain(mutations_by_loc)
+                .map(function(mutations, location) {
+                    var group,
+                        scale = d3.scale.ordinal();
 
-                        mutations.sort(_.bind(that.mutationSortFn, that));
+                    mutations.sort(_.bind(that.mutationSortFn, that));
 
-                        var mutation_ids_sorted = _
-                            .chain(mutations)
-                            .map(mutationIdFn)
-                            .uniq()
-                            .value();
+                    var mutation_ids_sorted = _
+                        .chain(mutations)
+                        .map(mutationIdFn)
+                        .uniq()
+                        .value();
 
-                        scale.domain(mutation_ids_sorted);
-                        scale.rangeBands([0, mutation_ids_sorted.length * that.config.mutation_shape_width]);
+                    scale.domain(mutation_ids_sorted);
+                    scale.rangeBands([0, mutation_ids_sorted.length * that.config.mutation_shape_width]);
 
-                        var width = scale.rangeExtent()[1];
+                    var width = scale.rangeExtent()[1];
 
-                        group = {
-                            data: {
-                                // The "location" variable needs to be converted to a numerical type
-                                // for the sort below to work correctly.
-                                location: parseInt(location, 10),
-                                mutations: mutations
-                            },
-                            scale: scale,
-                            left_extent: width / 2.0,
-                            right_extent: width / 2.0,
-                            start_loc: 0.0,
-                            width: width
-                        };
+                    group = {
+                        data: {
+                            // The "location" variable needs to be converted to a numerical type
+                            // for the sort below to work correctly.
+                            location: parseInt(location, 10),
+                            mutations: mutations
+                        },
+                        scale: scale,
+                        left_extent: width / 2.0,
+                        right_extent: width / 2.0,
+                        start_loc: 0.0,
+                        width: width
+                    };
 
-                        return group;
-                    })
-                    .sortBy(function(group) {
-                        return group.data.location;
-                    })
-                    .value();
-            };
+                    return group;
+                })
+                .sortBy(function(group) {
+                    return group.data.location;
+                })
+                .value();
+        },
 
-            var buildLocationGroupsAcrossTracks = _.once(buildLocationGroups);
+        alignMutationsForProteinTrack: function() {
+            var that = this;
+            var data = this.data;
 
-            _.each(data.tracks, function(track) {
+            var buildLocationGroupsAcrossTracks = _.once(_.bind(this._buildLocationGroups, this));
+
+            _.chain(data.tracks)
+                .filter(function(track) {
+                    return track.type == 'protein'
+            })
+            .each(function(track) {
                 var layout = {};
                 var location_groups;
 
@@ -1293,15 +1202,7 @@
             });
         },
 
-        updateMutationLayout: function(param_scale) {
-            var layoutFn = function(mutation_data) {
-                this.basicMutationLayout(mutation_data, param_scale);
-            };
-
-            _.each(this.data.tracks, layoutFn, this);
-        },
-
-        basicMutationLayout: function(mutation_data, param_scale) {
+        basicProteinTrackLayout: function(mutation_data, param_scale) {
             var that = this,
                 location_groups = mutation_data.mutation_layout.location_groups,
                 location_to_node_map = mutation_data.mutation_layout.location_to_node_map,
@@ -1316,7 +1217,6 @@
 
             var pivot_location = node_locations[Math.floor(node_locations.length / 2)];
 
-            //var x_scale = that.vis.ref_scale;
             var x_scale = param_scale;
 
             var pivot_node = location_to_node_map[pivot_location];
@@ -1363,6 +1263,19 @@
             };
         },
 
+        updateVariantScreenLocationsForAllTracks: function() {
+            _.each(this.data.tracks, function(track) {
+                if (track.type == 'protein') {
+                    this.basicProteinTrackLayout(track, this.vis.ref_scale)
+                }
+                else if (track.type == 'genomic') {
+                    this.basicGenomicTrackLayout(track, this.vis.ref_scale)
+                }
+                else {
+                    console.error("Unknown track type \'" + track.type + "\'");
+                }
+            }, this);
+        },
 
         updateTickScale: function() {
             var scale = this.vis.viewport_scale[0],
@@ -1394,22 +1307,22 @@
 
                     var background_tick = d3.select(this)
                         .selectAll(".loc-tick")
-                            .data(function() {
-                                return that.getVisibleTicks();
-                            }, String);
+                        .data(function() {
+                            return that.getVisibleTicks();
+                        }, String);
 
                     background_tick
                         .enter()
                         .append("g")
-                            .attr("class", "loc-tick")
-                            .attr("transform", function(d) {
-                                return "translate(" + that.vis.tick_scale(d) + ",0)";
-                            })
+                        .attr("class", "loc-tick")
+                        .attr("transform", function(d) {
+                            return "translate(" + that.vis.tick_scale(d) + ",0)";
+                        })
                         .append("svg:line")
-                            .attr("y1", layout.background_ticks.y1)
-                            .attr("y2", layout.background_ticks.y2)
-                            .style("stroke-width", 1.0)
-                            .style("stroke", "#ccc");
+                        .attr("y1", layout.background_ticks.y1)
+                        .attr("y2", layout.background_ticks.y2)
+                        .style("stroke-width", 1.0)
+                        .style("stroke", "#ccc");
 
                     d3.select(this)
                         .selectAll(".loc-tick line")
@@ -1417,8 +1330,8 @@
                         .duration(500)
                         .attr("y1", layout.background_ticks.y1)
                         .attr("y2", layout.background_ticks.y2);
-            });
-    
+                });
+
         },
 
         updateReferenceLines: function() {
@@ -1438,15 +1351,15 @@
                     ref_line
                         .enter()
                         .append("g")
-                            .attr("class", "loc-tick")
-                            .attr("transform", function(d) {
-                                return "translate(" + x(d) + ",0)";
-                            })
+                        .attr("class", "loc-tick")
+                        .attr("transform", function(d) {
+                            return "translate(" + x(d) + ",0)";
+                        })
                         .append("svg:line")
-                            .attr("y1", layout.background_ticks.y1)
-                            .attr("y2", layout.background_ticks.y2)
-                            .style("stroke-width", 1.0)
-                            .style("stroke", "#ccc");
+                        .attr("y1", layout.background_ticks.y1)
+                        .attr("y2", layout.background_ticks.y2)
+                        .style("stroke-width", 1.0)
+                        .style("stroke", "#ccc");
 
                     ref_line
                         .attr("transform", function(d) {
@@ -1456,7 +1369,7 @@
                     ref_line
                         .exit()
                         .remove();
-            });
+                });
         },
 
         updateProteinScaleTicks: function() {
@@ -1479,18 +1392,18 @@
                     scale_ticks
                         .enter()
                         .append("g")
-                            .attr("class", "loc-tick")
-                            .attr("transform", function(d) {
-                                return "translate(" + x(d) + ",0)";
-                            })
+                        .attr("class", "loc-tick")
+                        .attr("transform", function(d) {
+                            return "translate(" + x(d) + ",0)";
+                        })
                         .append("svg:text")
-                            .attr("text-anchor", "middle")
-                            .attr("y", function() {
-                                return 0;
-                            })
-                            .text(function(d) {
-                                return d;
-                            });
+                        .attr("text-anchor", "middle")
+                        .attr("y", function() {
+                            return 0;
+                        })
+                        .text(function(d) {
+                            return d;
+                        });
 
                     scale_ticks
                         .attr("transform", function(d) {
@@ -1511,10 +1424,10 @@
                 .each(function(track_data) {
                     var scale_line = d3.select(this)
                         .selectAll(".protein-scale")
-                            .data(function(d) {
-                                if (d.layout.protein_scale_line.enabled === true) {
-                                    return [d];
-                                }
+                        .data(function(d) {
+                            if (d.layout.protein_scale_line.enabled === true) {
+                                return [d];
+                            }
 
                             return [];
                         }, function(d) {
@@ -1526,13 +1439,13 @@
 
                     scale_line_enter
                         .append("svg:line")
-                            .attr("class", "protein-scale")
-                            .attr("y1", function(d) { return d.layout.protein_scale_ticks.enabled === true ? -that.config.location_tick_height : 0; })
-                            .attr("y2", function(d) { return d.layout.protein_scale_ticks.enabled === true ? -that.config.location_tick_height : 0; })
-                            .attr("x1", 0)
-                            .attr("x2", that.config.protein_scale.width)
-                            .style("stroke", "black")
-                            .style("opacity", 1e-6);
+                        .attr("class", "protein-scale")
+                        .attr("y1", function(d) { return d.layout.protein_scale_ticks.enabled === true ? -that.config.location_tick_height : 0; })
+                        .attr("y2", function(d) { return d.layout.protein_scale_ticks.enabled === true ? -that.config.location_tick_height : 0; })
+                        .attr("x1", 0)
+                        .attr("x2", that.config.protein_scale.width)
+                        .style("stroke", "black")
+                        .style("opacity", 1e-6);
 
                     if (that.config.enable_transitions) {
                         scale_line = scale_line
@@ -1552,7 +1465,7 @@
 
                     scale_line_exit
                         .remove();
-            });
+                });
 
             this.updateProteinScaleTicks();
         },
@@ -1569,9 +1482,10 @@
                             //
                             // 1. translate (<viewport x>, <mutations placement y>)
                             // 2. scale (<viewport x scale>, -1)
+
                             var trs =
                                 "translate(" + (that.vis.viewport_pos[0]) + "," + (d.layout.mutations.y) + ")" +
-                                "scale(" + that.vis.viewport_scale[0] + ", -1)";
+                                    "scale(" + that.vis.viewport_scale[0] + ", -1)";
 
                             return trs;
                         });
@@ -1586,81 +1500,49 @@
                 .selectAll(".mutations")
                 .each(function(mutation_data) {
                     var location_to_node_map = mutation_data.mutation_layout.location_to_node_map,
-                        location_hovercard = mutation_data.tooltips.location.hovercard,
-                        layout = mutation_data.layout;
+                        hovercard = mutation_data.tooltips.hovercard;
 
-                    var sampleHoverCardHandler = function(location_data) {
-                        var card_config = {};
-
-                        _.each(mutation_data.tooltips.location.items, function(value_fn, key) {
-                            card_config[key] = function() {
-                                return value_fn(location_data);
-                            };
-
-                        });
-
-                        _.each(mutation_data.tooltips.sample.items, function(value_fn, key) {
-                            card_config[key] = value_fn;
-                        });
-
-                        var samplecard = vq.hovercard({
-                            canvas_id: that.config.guid,
-                            include_header: false,
-                            include_footer: true,
-                            self_hover: true,
-                            timeout: 200,
-                            data_config: card_config,
-                            tool_config: []
-                        });
-
-                        samplecard.call(this);
-                    };
-
-                    var renderCircles = function(type_data) {
+                    var renderCircles = function(d) {
                         d3.select(this)
                             .selectAll(".mutation-type.mutation")
-                                .data(type_data.sample_ids, function(type_data) {
-                                    return type_data.id;
-                                })
-                                .enter()
+                            .data(d.sample_ids, String)
+                            .enter()
                             .append("svg:circle")
-                                .attr("r", that.config.mutation_shape_width / 2.0)
-                                .attr("class", "mutation")
-                                .attr("cx", 0.0)
-                                .attr("cy", function(sample, index) {
-                                    return index * that.config.mutation_shape_width;
-                                });
+                            .attr("r", that.config.mutation_shape_width / 2.0)
+                            .attr("class", "mutation")
+                            .attr("cx", 0.0)
+                            .attr("cy", function(sample, index) {
+                                return index * that.config.mutation_shape_width;
+                            });
 
-
-
-                        d3.select(this).selectAll(".mutation").on("mouseover", function(d) {
-                            sampleHoverCardHandler.call(this, type_data);
+                        d3.select(this).on("mouseover", function(d) {
+                            hovercard.call(this, d);
                         });
                     };
 
                     var renderBars = function(d) {
                         d3.select(this)
                             .selectAll(".mutation-type.mutation")
-                                .data(function(d) {
-                                    return d.processed_samples.color_by.color_by.bar_data;
+                            .data(function(d) {
+                                return d.processed_samples.color_by.bar_data;
                             })
-                                .enter()
+                            .enter()
                             .append("svg:rect")
-                                .attr("class", "mutation")
-                                .attr("x", -(that.config.mutation_shape_width / 2.0))
-                                .attr("y", function(d) {
-                                    return d.y;
-                                })
-                                .attr("width", that.config.mutation_shape_width)
-                                .attr("height", function(d) {
-                                    return d.height;
-                                })
-                                .style("fill", function(d) {
-                                    return d.color;
-                                });
+                            .attr("class", "mutation")
+                            .attr("x", -(that.config.mutation_shape_width / 2.0))
+                            .attr("y", function(d) {
+                                return d.y;
+                            })
+                            .attr("width", that.config.mutation_shape_width)
+                            .attr("height", function(d) {
+                                return d.height;
+                            })
+                            .style("fill", function(d) {
+                                return d.color;
+                            });
 
                         d3.select(this).on("mouseover", function(d) {
-                            location_hovercard.call(this, d);
+                            hovercard.call(this, d);
                         });
                     };
 
@@ -1670,33 +1552,33 @@
                         var mutation_type_g = d3
                             .select(this)
                             .selectAll("g.mutation-type")
-                                .data(function() {
-                                    return data.mutations;
-                                }, mutationIdFn);
+                            .data(function() {
+                                return data.mutations;
+                            }, mutationIdFn);
 
                         var mutation_type_enter = mutation_type_g.enter(),
                             mutation_type_exit = mutation_type_g.exit();
 
                         mutation_type_enter
                             .append("svg:g")
-                                .attr("class", "mutation-type")
-                                .attr("transform", function(d) {
-                                    var x = group.scale(mutationIdFn(d)) + that.config.mutation_shape_width / 2.0;
-                                    var y = that.config.mutation_groups.stems.height * (layout.mutation_stems.enabled === true ? 1 : 0);
-                                    return "translate(" + x + "," + y + ")";
-                                })
-                                .style("fill", function(d) {
-                                    var colors = that.config.mutation_colors,
-                                        field = that.config.mutation_color_field;
+                            .attr("class", "mutation-type")
+                            .attr("transform", function(d) {
+                                var x = group.scale(mutationIdFn(d)) + that.config.mutation_shape_width / 2.0;
+                                var y = that.config.mutation_groups.stems.height * (that.config.enable_mutation_stems === true ? 1 : 0);
+                                return "translate(" + x + "," + y + ")";
+                            })
+                            .style("fill", function(d) {
+                                var colors = that.config.mutation_colors,
+                                    field = that.config.mutation_color_field;
 
-                                    if (_.has(colors, d[field])) {
-                                        return colors[d[field]];
-                                    }
-                                    else {
-                                        return 'lightgray';
-                                    }
-                                })
-                                .style("opacity", 1e-6);
+                                if (_.has(colors, d[field])) {
+                                    return colors[d[field]];
+                                }
+                                else {
+                                    return 'lightgray';
+                                }
+                            })
+                            .style("opacity", 1e-6);
 
                         if (that.config.enable_transitions) {
                             mutation_type_g = mutation_type_g
@@ -1713,7 +1595,7 @@
                         mutation_type_g
                             .attr("transform", function(d) {
                                 var x = group.scale(mutationIdFn(d)) + that.config.mutation_shape_width / 2.0;
-                                var y = that.config.mutation_groups.stems.height * (layout.mutation_stems.enabled === true ? 1 : 0);
+                                var y = that.config.mutation_groups.stems.height * (that.config.enable_mutation_stems === true ? 1 : 0);
                                 return "translate(" + x + "," + y + ")";
                             })
                             .style("opacity", 1.0);
@@ -1724,23 +1606,23 @@
 
                     var mutation_group_g = d3.select(this)
                         .selectAll(".mutation.group")
-                            .data(_.map(mutation_data.mutations_by_loc, function(mutations, location) {
-                                    return {
-                                        location: location,
-                                        mutations: mutations
-                                    };
-                            }, function(d) {
-                                return d.location;
-                            }));
+                        .data(_.map(mutation_data.mutations_by_loc, function(mutations, location) {
+                            return {
+                                location: location,
+                                mutations: mutations
+                            };
+                        }, function(d) {
+                            return d.location;
+                        }));
 
                     mutation_group_g
-                            .enter()
+                        .enter()
                         .append("svg:g")
-                            .attr("class", "mutation group")
-                            .attr("transform", function(d) {
-                                var node = location_to_node_map[d.location];
-                                return "translate(" + node.start_loc + ",0)";
-                            });
+                        .attr("class", "mutation group")
+                        .attr("transform", function(d) {
+                            var node = location_to_node_map[d.location];
+                            return "translate(" + node.start_loc + ",0)";
+                        });
 
                     // Update
                     mutation_group_g
@@ -1768,7 +1650,7 @@
                     mutation_group_g
                         .exit()
                         .remove();
-            });
+                });
         },
 
         applyProteinDomains: function() {
@@ -1784,46 +1666,46 @@
                 .each(function() {
                     var domains_g =  d3.select(this)
                         .selectAll("g.match")
-                            .data(function(d) {
-                                return d;
-                            })
+                        .data(function(d) {
+                            return d;
+                        })
                         .enter()
                         .append("g")
-                            .attr("class", function(d) {
-                                return "match " + d.dbname;
-                            })
-                            .attr("transform", function(d) {
-                                var category = d[that.config.protein_domains.key];
-                                return "translate(0," + that.vis.domain_scale(category) + ")";
-                            });
+                        .attr("class", function(d) {
+                            return "match " + d.dbname;
+                        })
+                        .attr("transform", function(d) {
+                            var category = d[that.config.protein_domains.key];
+                            return "translate(0," + that.vis.domain_scale(category) + ")";
+                        });
 
                     domains_g
                         .selectAll("rect.domain-location")
-                            .data(function(d) {
-                                var fields = ['dbname', 'evd', 'id', 'name', 'status'];
-                                var loc_data = [];
-                                _.each(d.locations, function(loc) {
-                                    var obj = _.pick(d, fields);
-                                    obj.location = loc;
-                                    loc_data.push(obj);
-                                });
+                        .data(function(d) {
+                            var fields = ['dbname', 'evd', 'id', 'name', 'status'];
+                            var loc_data = [];
+                            _.each(d.locations, function(loc) {
+                                var obj = _.pick(d, fields);
+                                obj.location = loc;
+                                loc_data.push(obj);
+                            });
 
-                                return loc_data;
-                            }, function(d) {
-                                return d.id + "+" + d.location.start + "+" + d.location.end;
-                            })
+                            return loc_data;
+                        }, function(d) {
+                            return d.id + "+" + d.location.start + "+" + d.location.end;
+                        })
                         .enter()
                         .append("rect")
-                            .attr("class", "domain-location")
-                            .attr("x", function(d) {
-                                return d.location.start;
-                            })
-                            .attr("width", function(d) {
-                                var aa_length = d.location.end - d.location.start;
-                                return aa_length;
-                            })
-                            .attr("height", that.config.signature_height)
-                            .style("vector-effect", "non-scaling-stroke");
+                        .attr("class", "domain-location")
+                        .attr("x", function(d) {
+                            return d.location.start;
+                        })
+                        .attr("width", function(d) {
+                            var aa_length = d.location.end - d.location.start;
+                            return aa_length;
+                        })
+                        .attr("height", that.config.signature_height)
+                        .style("vector-effect", "non-scaling-stroke");
 
                     domains_g
                         .selectAll("rect.domain-location")
@@ -1835,13 +1717,13 @@
 
                     domains_g
                         .selectAll("rect.domain-location")
-                            .attr("x", function(d) {
-                                return d.location.start;
-                            })
-                            .attr("width", function(d) {
-                                return aa_length = d.location.end - d.location.start;
-                            });
-            });
+                        .attr("x", function(d) {
+                            return d.location.start;
+                        })
+                        .attr("width", function(d) {
+                            return aa_length = d.location.end - d.location.start;
+                        });
+                });
         },
 
         updateProteinDomains: function() {
@@ -1861,7 +1743,7 @@
                             // 3. scale (<viewport x scale>, -1)
                             var trs =
                                 "translate(" + (that.vis.viewport_pos[0]) + "," + (track_data.layout.protein_domains.y) + ")" +
-                                "scale(" + that.vis.viewport_scale[0] * that.vis.domain_rect_scale_factor + ", -1)";
+                                    "scale(" + that.vis.viewport_scale[0] * that.vis.domain_rect_scale_factor + ", -1)";
 
                             return trs;
                         });
@@ -1895,24 +1777,24 @@
                     var stem = d3
                         .select(this)
                         .selectAll("path.stem")
-                            .data(function(d) {
-                                return track_data.layout.mutation_stems.enabled ? d.mutations_processed : [];
-                            }, mutationIdFn);
+                        .data(function(d) {
+                            return that.config.enable_mutation_stems ? d.mutations_processed : [];
+                        }, mutationIdFn);
 
                     var stem_exit = stem.exit();
 
                     stem
                         .enter()
                         .append("svg:path")
-                            .attr("class", "stem")
-                            .style("fill", "none")
-                            .style("stroke", "gray")
-                            .style("stroke-width", that.config.mutation_groups.stems.stroke_width)
-                            .style("vector-effect", "non-scaling-stroke")
+                        .attr("class", "stem")
+                        .style("fill", "none")
+                        .style("stroke", "gray")
+                        .style("stroke-width", that.config.mutation_groups.stems.stroke_width)
+                        .style("vector-effect", "non-scaling-stroke")
                         .append("svg:title")
-                            .text(function(d) {
-                                return that.getMutationLabelRows(d).join("\n");
-                            });
+                        .text(function(d) {
+                            return that.getMutationLabelRows(d).join("\n");
+                        });
 
                     if (that.config.enable_transitions) {
                         stem = stem
@@ -1925,11 +1807,900 @@
 
                     stem_exit
                         .remove();
+                });
+        },
+
+        setStems: function(stems_enabled) {
+            this.config.enable_mutation_stems = stems_enabled;
+
+            this.updateVerticalScaleRanges();
+            this.applyStems();
+            this.render();
+        },
+
+        // ------------
+        // Genomic mode
+        // ------------
+
+        _getDimensionsForGenomicTrack: function(track, config, param_layout) {
+            var layout = param_layout || _.extend({}, track.layout);
+
+            layout.protein_scale_line.y = 150;
+
+            layout.height = 160;
+
+            layout.variants = {
+                y: 100
+            };
+
+            layout.colors = {
+                field_name: this.config.variant_color_field,
+                map: this.config.variant_colors
+            };
+
+            return layout;
+        },
+
+        _samplesColorByForGenomicTrack: function(d, color_by, track, param_statistics) {
+            if (!_.has(d, 'processed_samples')) {
+                d.processed_samples = {
+                    color_by: {}
+                };
+            }
+
+            var grouped,
+                bar_data;
+
+            if (_.isFunction(color_by.group_fn)) {
+                grouped = color_by.group_fn(d.sample_ids);
+            }
+            else {
+                grouped = _.countBy(d.sample_ids, function(s) {
+                    return s.value;
+                });
+            }
+
+            if (color_by.type == 'fract') {
+                bar_data = ScalingFunctions.createFractionalBars(track, color_by, grouped, param_statistics);
+            }
+            else if (color_by.type == 'log2nabs') {
+                bar_data = ScalingFunctions.createLog2Bars(track, color_by, grouped, param_statistics);
+            }
+            else if (color_by.type == 'log2nnorm') {
+                bar_data = ScalingFunctions.createNormalizedLogBars(track, color_by, grouped, param_statistics);
+            }
+            else if (color_by.type == 'linnorm') {
+                bar_data = ScalingFunctions.createNormalizedLinearBars(track, color_by, grouped, param_statistics);
+            }
+            else {
+                console.error('Invalid color_by type \'' + color_by.type + '\'');
+            }
+
+            var data_obj = _.clone(color_by);
+            data_obj.bar_data = bar_data.array;
+            data_obj.category_counts = grouped;
+            d.processed_samples.color_by = data_obj;
+        },
+
+        processDataGenomic: function() {
+            var that = this;
+            var data = this.data;
+
+            var processSamples = function(entries) {
+                var mutation_data = _.extend({}, entries[0], {}),
+                    id_field = that.config.mutation_sample_id_field;
+
+                mutation_data.sample_ids = _.map(entries, function(e) {
+                    return {
+                        id: e[id_field],
+                        value: e.value
+                    };
+                });
+
+                mutation_data[id_field] = null;
+
+                return mutation_data;
+            };
+
+            data.subtype_to_index_map = {};
+
+            _.chain(data.tracks)
+            .filter(function(track) {
+                return track.type == 'genomic';
+            })
+            .each(function(track, index) {
+                data.subtype_to_index_map[track.label] = index;
+
+                if (! _.has(track, 'variants_by_loc') && ! _.has(track, 'variants_processed')) {
+                    var variants_by_loc = _
+                        .chain(track.variants)
+                        .groupBy(track.variant_id_field)
+                        .map(processSamples)
+                        .groupBy(track.variant_coordinate_field)
+                        .value();
+
+                    // Create flat array of all mutations
+                    var all_variants = [];
+
+                    _.each(variants_by_loc, function(variants, location) {
+                        all_variants.push.apply(all_variants, variants);
+                    });
+
+                    track.variants_by_loc = variants_by_loc;
+                    track.variants_processed = all_variants;
+
+                    that.createTrackStatistics(track, 'variants_by_loc');
+
+                    // If 'Color By' functionality is enabled, calculate needed statistics
+                    if (_.has(track, 'color_by') && track.color_by.type != 'none') {
+                        _.each(variants_by_loc, function(variants, location) {
+                            _.each(variants, function(m) {
+                                that._samplesColorByForProteinTrack(m, track.color_by, track);
+                            });
+                        });
+                    }
+                }
+
+                _.each(track.region_data, function(region) {
+                    if (! _.has(region, 'variants_by_loc') && ! _.has(region, 'variants_processed')) {
+                        var variants_by_loc = _
+                            .chain(region.data)
+                            .groupBy(track.variant_id_field)
+                            .map(processSamples)
+                            .groupBy(track.variant_coordinate_field)
+                            .value();
+
+                        // Create flat array of all mutations
+                        var all_variants = [];
+
+                        _.each(variants_by_loc, function(variants, location) {
+                            all_variants.push.apply(all_variants, variants);
+                        });
+
+                        region.variants_by_loc = variants_by_loc;
+                        region.variants_processed = all_variants;
+
+                        that.createTrackStatistics(region, 'variants_by_loc');
+
+                        // If 'Color By' functionality is enabled, calculate needed statistics
+                        if (_.has(track, 'color_by') && track.color_by.type != 'none') {
+                            _.each(variants_by_loc, function(variants, location) {
+                                _.each(variants, function(m) {
+                                    that._samplesColorByForGenomicTrack(m, track.color_by, track, track.statistics);
+                                });
+                            });
+                        }
+                    }
+                });
+
+                var default_layout = {
+                    background_ticks: {
+                        y1: 0,
+                        y2: 0
+                    },
+                    mutations: {
+                        y: 0
+                    },
+                    protein_scale_line: {
+                        enabled: true,
+                        y: 0
+                    },
+                    protein_scale_ticks: {
+                        enabled: true,
+                        y: 0
+                    },
+                    protein_domains: {
+                        enabled: true,
+                        y: 0
+                    },
+                    y: 0
+                };
+
+                track.layout = _.extend(default_layout, track.layout);
+
+                track.tooltip_handlers = {
+                    variants: vq.hovercard({
+                        canvas_id: that.config.guid,
+                        include_header: false,
+                        include_footer: true,
+                        self_hover: true,
+                        timeout: 200,
+                        param_data: true,
+                        data_config: track.tooltips.variants.items
+                    })
+                };
             });
+
+            data.all_variants_by_loc = _
+                .chain(data.tracks)
+                .pluck('variants_by_loc')
+                .reduce(function(memo, locations, index) {
+                    _.each(locations, function(data, loc) {
+                        if (!_.has(memo, loc)) {
+                            memo[loc] = data.slice(0);
+                        }
+                        else {
+                            // Concatenate the array 'data' to memo[loc}
+                            memo[loc].push.apply(memo[loc], data.slice(0));
+                        }
+                    });
+                    return memo;
+                }, {})
+                .value();
+
+            this.alignVariantsGenomic();
+        },
+
+        _buildLocationGroupsForVariants: function(mutations_by_loc) {
+            var that = this;
+            var mutationIdFn = this.mutationIdFn;
+
+            return _
+                .chain(mutations_by_loc)
+                .map(function(mutations, location) {
+                    var group,
+                        scale = d3.scale.ordinal();
+
+                    mutations.sort(_.bind(that.mutationSortFn, that));
+
+                    var mutation_ids_sorted = _
+                        .chain(mutations)
+                        .map(mutationIdFn)
+                        .uniq()
+                        .value();
+
+                    scale.domain(mutation_ids_sorted);
+                    scale.rangeBands([0, mutation_ids_sorted.length * that.config.mutation_shape_width]);
+
+                    var width = scale.rangeExtent()[1];
+
+                    group = {
+                        data: {
+                            // The "location" variable needs to be converted to a numerical type
+                            // for the sort below to work correctly.
+                            location: parseInt(location, 10),
+                            mutations: mutations
+                        },
+                        scale: scale,
+                        left_extent: width / 2.0,
+                        right_extent: width / 2.0,
+                        start_loc: 0.0,
+                        width: width
+                    };
+
+                    return group;
+                })
+                .sortBy(function(group) {
+                    return group.data.location;
+                })
+                .value();
+        },
+
+        _buildLocationGroupsForVariantsInRegion: function(region, track) {
+            var that = this;
+            var mutationIdFn = this.mutationIdFn,
+                mutations_by_loc = region.variants_by_loc;
+
+            return _
+                .chain(mutations_by_loc)
+                .map(function(mutations, location) {
+                    var group,
+                        scale = d3.scale.ordinal();
+
+                    mutations.sort(_.bind(that.mutationSortFn, that));
+
+                    var mutation_ids_sorted = _
+                        .chain(mutations)
+                        .map(function(variant) {
+                            return variant[track.variant_id_field];
+                        })
+                        .uniq()
+                        .value();
+
+                    scale.domain(mutation_ids_sorted);
+                    scale.rangeBands([0, mutation_ids_sorted.length * that.config.mutation_shape_width]);
+
+                    var width = scale.rangeExtent()[1];
+
+                    group = {
+                        data: {
+                            // The "location" variable needs to be converted to a numerical type
+                            // for the sort below to work correctly.
+                            location: parseInt(location, 10),
+                            mutations: mutations
+                        },
+                        scale: scale,
+                        left_extent: width / 2.0,
+                        right_extent: width / 2.0,
+                        start_loc: 0.0,
+                        width: width
+                    };
+
+                    return group;
+                })
+                .sortBy(function(group) {
+                    return group.data.location;
+                })
+                .value();
+        },
+
+        alignVariantsGenomic: function() {
+            var self = this;
+            var data = this.data;
+
+
+            _.chain(data.tracks)
+                .filter(function(track) {
+                    return track.type == 'genomic'
+                })
+                .each(function(track) {
+
+                    _.each(track.region_data, function(region) {
+                        var layout = {},
+                            location_groups = self._buildLocationGroupsForVariantsInRegion(region, track);
+
+                        layout.location_groups = location_groups;
+
+                        layout.location_to_node_map = _.reduce(location_groups, function(memo, group) {
+                            memo[group.data.location] = group;
+                            return memo;
+                        }, {});
+
+                        layout.location_to_node_index_map = _.reduce(location_groups, function(memo, group, index) {
+                            memo[group.data.location] = index;
+                            return memo;
+                        }, {});
+
+                        region.variant_layout = layout;
+                    });
+
+                    var layout = {};
+                    var location_groups;
+
+                    location_groups = self._buildLocationGroupsForVariants(track.variants_by_loc);
+
+                    layout.location_groups = location_groups;
+
+                    layout.location_to_node_map = _.reduce(location_groups, function(memo, group) {
+                        memo[group.data.location] = group;
+                        return memo;
+                    }, {});
+
+                    layout.location_to_node_index_map = _.reduce(location_groups, function(memo, group, index) {
+                        memo[group.data.location] = index;
+                        return memo;
+                    }, {});
+
+                    track.variant_layout = layout;
+                });
+        },
+
+        basicGenomicTrackLayout: function(track, param_scale) {
+            var that = this,
+                location_to_node_map = track.variant_layout.location_to_node_map,
+                viewport_x = this.vis.viewport_pos[0],
+                vis_coord = this.vis.visible_genomic_coordinates;
+
+            var node_locations = _
+                .chain(location_to_node_map)
+                .keys()
+                .map(function(d) {return parseInt(d, 10);})
+                .sortBy(function(d) {return d;})
+                .value();
+
+            var pivot_location = node_locations[0];
+
+            var x_scale = d3.scale.linear().domain([0, 1500]).range([0, 500]);
+
+            var pivot_node = location_to_node_map[pivot_location];
+
+            pivot_node.start_loc = x_scale(pivot_node.data.location) - pivot_node.left_extent;
+
+            // Justify locations right of the pivot
+            var group_padding = 5.0;
+            var current_loc = 0.0 + viewport_x;
+
+            var is_visible_group = function(coordinate) {
+                return vis_coord[0] <= coordinate  && coordinate <= vis_coord[1];
+            };
+
+            _.each(track.region_data, function(region) {
+                _.each(region.variant_layout.location_groups, function(node) {
+                    var location = node.data.location;
+
+                    if (is_visible_group(location)) {
+                        var variant_screen_loc = region.layout.get_screen_location_for_coordinate(location);
+
+                        node.start_loc = variant_screen_loc > current_loc ? variant_screen_loc : current_loc;
+                        node.start_loc -= node.left_extent;
+
+                        current_loc = node.start_loc + node.width + group_padding;
+                    }
+                });
+            });
+        },
+
+
+        regionLayout: function(region_data) {
+            var self = this,
+                current_loc = 0;
+
+            _.each(region_data, function(region) {
+                var start = isNaN(region.start) ? 0 : region.start,
+                    region_end = region.end;
+
+                var width;
+
+                if (region.type == 'exon') {
+                    width = region_end - start;
+                }
+                else {
+                    width = 10;
+                }
+
+                var coordinate_scale = d3.scale.linear().domain([start, region_end]).range([current_loc, current_loc + width]);
+                var inverse_scale = d3.scale.linear().domain([0, width]).range([start, region_end]);
+
+                region.layout = {
+                    screen_x: current_loc,
+                    screen_width: width,
+                    coordinate_scale: coordinate_scale,
+                    inverse_scale: inverse_scale,
+                    get_screen_location_for_coordinate: function(coordinate) {
+                        return coordinate_scale(coordinate) + self.vis.viewport_pos[0];
+                    }
+                };
+
+                current_loc = current_loc + width + 1;
+            });
+
+            return {
+                start_coordinate: region_data[0].start,
+                end_coordinate: _.last(region_data).end,
+                total_width:  current_loc - 1
+            };
+        },
+
+        renderCodingRegions: function() {
+            this.vis.root
+                .selectAll(".panel-area")
+                .selectAll("g.seqpeek-track")
+                .selectAll(".genomic")
+                .each(function(track) {
+                    var get_scale_y = function() {
+                        return track.layout.protein_scale_line.y;
+                    };
+
+                    d3.select(this).selectAll(".region.exon")
+                        .each(function() {
+                            d3.select(this)
+                                .append("svg:line")
+                                .attr("class", "x-scale")
+                                .attr("x1", function(d) {
+                                    return 0.0;
+                                })
+                                .attr("x2", function(d) {
+                                    return d.layout.screen_width;
+                                })
+                                .attr("y1", function(d) {
+                                    return get_scale_y();
+                                })
+                                .attr("y2", function(d) {
+                                    return get_scale_y();
+                                })
+                                .style("stroke", "black");
+                        });
+                });
+
+            this.vis.root
+                .selectAll(".panel-area")
+                .selectAll("g.seqpeek-track")
+                .selectAll(".genomic")
+                .each(function(track) {
+                    var get_scale_y = function() {
+                        return track.layout.protein_scale_line.y;
+                    };
+
+                    d3.select(this).selectAll(".region.noncoding")
+                        .each(function() {
+                            d3.select(this)
+                                .append("svg:rect")
+                                .attr("class", "x-scale")
+                                .attr("x", function(d) {
+                                    return 0.0;
+                                })
+                                .attr("width", function(d) {
+                                    return d.layout.screen_width;
+                                })
+                                .attr("y", function(d) {
+                                    return get_scale_y() - 2.5;
+                                })
+                                .attr("height", 5)
+                                .style("fill", "blue")
+                                .style("stroke", "blue");
+                        });
+                });
+        },
+
+        _getCoordinateFromScaleLocation: function(track, x) {
+            var region;
+
+            for (var i = 0; i < track.region_data.length; ++i) {
+                region = track.region_data[i];
+
+                if (region.layout.screen_x <= x && x <= (region.layout.screen_x + region.layout.screen_width)) {
+                    return region.layout.inverse_scale(x);
+                }
+            }
+
+            return _.last(track.region_data).end;
+        },
+
+        _getVisibleCoordinates: function() {
+            var x = -this.vis.viewport_pos[0],
+                width = this.vis.viewport_size[0],
+                track = this.data.tracks[0],
+                min_x = d3.max([x, 0]),
+                max_x = d3.min([x + width, width]);
+
+            if (track.type == 'protein') {
+                return this.vis.visible_coordinates;
+            }
+
+            this._getCoordinateFromScaleLocation(this.data.tracks[0], -180 + 1300);
+
+            var start = this._getCoordinateFromScaleLocation(this.data.tracks[0], min_x);
+            var end = this._getCoordinateFromScaleLocation(this.data.tracks[0], max_x);
+
+            if (start < track.region_metadata.start_coordinate) {
+                start = track.region_metadata.start_coordinate;
+            }
+
+            if (end > track.region_metadata.end_coordinate) {
+                end = track.region_metadata.end_coordinate;
+            }
+
+            return [start, end];
+        },
+
+        _scrollRegions: function() {
+            var that = this;
+
+            this.vis.visible_genomic_coordinates = this._getVisibleCoordinates([]);
+
+            this.vis.root
+                .selectAll(".panel-area")
+                .selectAll("g.seqpeek-track")
+                .selectAll(".genomic")
+                .each(function() {
+                    d3.select(this)
+                        .attr("transform", function(d) {
+                            // Transform:
+                            //
+                            // 1. translate (<viewport x>, <mutations placement y>)
+                            // 2. scale (<viewport x scale>, -1)
+                            /*
+                             var trs =
+                             "translate(" + (that.vis.viewport_pos[0]) + "," + (d.layout.mutations.y) + ")" +
+                             "scale(" + that.vis.viewport_scale[0] + ", -1)";
+                             */
+                            var trs =
+                                "translate(" + (that.vis.viewport_pos[0]) + ",0)";
+
+                            return trs;
+                        });
+                });
+
+            this._updateVisibleVariantGroupsForTracks();
+
+            this.updateVariantScreenLocationsForAllTracks();
+
+            this._scrollVariantGroups();
+            this._scrollStems();
+        },
+
+        _scrollVariantGroups: function() {
+            this.vis.refs.symbols.genomic
+                .selectAll(".variants")
+                .selectAll(".variant.group")
+                .remove();
+
+            this.renderVariantGroups();
+        },
+
+        _scrollStems: function() {
+            this.vis.refs.symbols.genomic
+                .selectAll(".variants")
+                .selectAll(".stem")
+                .remove();
+
+            this.renderVariantStems();
+        },
+
+        _updateVisibleVariantGroupsForTracks: function() {
+            _.chain(this.data.tracks)
+                .filter(function(track) {
+                    return track.type == 'genomic';
+                })
+                .each(function(track) {
+
+                });
+        },
+
+        _getDataByLocationMapForTrack: function(track) {
+            var that = this,
+                vis_coord = this.vis.visible_genomic_coordinates;
+
+            if (track.type == 'protein') {
+                return track.mutations_by_loc;
+            }
+            else if (track.type == 'genomic') {
+                var data_by_loc = _.reduce(track.region_data, function(data_array, region) {
+
+                    _.each(region.variants_by_loc, function(variants, location) {
+                        data_array.push({
+                            location: location,
+                            mutations: variants,
+                            layout: region.variant_layout,
+                            group: region.variant_layout.location_to_node_map[location]
+                        });
+                    });
+
+                    return data_array;
+                }, []);
+
+                return _.filter(data_by_loc, function(location_info) {
+                    var int_loc = parseInt(location_info.location);
+
+                    return int_loc >= vis_coord[0] && vis_coord[1] >= int_loc;
+                });
+            }
+            else {
+                console.error("Unknown track type: \'" + track.type + "\'");
+                return null;
+            }
+        },
+
+        _applyVariantTypeGroups: function(selection, mutationIdFn, track) {
+            this.each(function(data) {
+                var group = data.group,
+                    variant_id_field = track.variant_id_field;
+
+                var mutation_type_g = d3
+                    .select(this)
+                    .selectAll("g.variant-type")
+                    .data(function() {
+                        return data.mutations;
+                    }, mutationIdFn);
+
+                var mutation_type_enter = mutation_type_g.enter(),
+                    mutation_type_exit = mutation_type_g.exit();
+
+                mutation_type_enter
+                    .append("svg:g")
+                    .attr("class", "variant-type")
+                    .attr("transform", function(d) {
+                        var x = group.scale(d[variant_id_field]) + track.variant_shape_width / 2.0;
+                        var y = -track.layout.variants.y;
+                        return "translate(" + x + "," + y + ")";
+                    })
+                    .style("fill", function(d) {
+                        var colors = track.layout.colors.map,
+                            field = track.layout.colors.field_name;
+
+                        if (_.has(colors, d[field])) {
+                            return colors[d[field]];
+                        }
+                        else {
+                            return 'lightgray';
+                        }
+                    });
+
+                mutation_type_exit
+                    .remove();
+            });
+        },
+
+        renderVariantGroups: function() {
+            var self = this;
+
+            var get_visible_variant_groups = function(data) {
+                return data.variant_layout.location_groups;
+            };
+
+            var tracks = this.vis.root
+                .selectAll(".data-area")
+                .selectAll("g.seqpeek-track");
+
+            tracks
+                .each(function(track_data) {
+                    var variant_group = d3
+                        .select(this)
+                        .selectAll(".genomic")
+                        .selectAll("g.variants")
+                        .data(function(d) {
+                            return [d];
+                        }, function(d) {
+                            return d.label;
+                        });
+
+                    variant_group
+                        .enter()
+                        .append("g")
+                        .attr("class", "variants")
+                        .attr("transform", function(d) {
+                            var trs = "scale(1,-1)";
+                            return trs;
+                        });
+                });
+
+            var renderCircles = function(d) {
+                d3.select(this)
+                    .selectAll(".variant-type.variant")
+                    .data(d.sample_ids, function(s) {
+                        return s.id;
+                    })
+                    .enter()
+                    .append("svg:circle")
+                    .attr("r", self.config.mutation_shape_width / 2.0)
+                    .attr("class", "mutation")
+                    .attr("cx", 0.0)
+                    .attr("cy", function(sample, index) {
+                        return index * self.config.mutation_shape_width;
+                    });
+
+                d3.select(this).on("mouseover", function(d) {
+                    hovercard.call(this, d);
+                });
+            };
+
+            var renderBars = function(d) {
+                d3.select(this)
+                    .selectAll(".variant-type.variant")
+                    .data(function(d) {
+                        return d.processed_samples.color_by.bar_data;
+                    })
+                    .enter()
+                    .append("svg:rect")
+                    .attr("class", "variant")
+                    .attr("x", -self.config.mutation_shape_width)
+                    .attr("y", function(d) {
+                        return d.y;
+                    })
+                    .attr("width", self.config.mutation_shape_width)
+                    .attr("height", function(d) {
+                        return d.height;
+                    })
+                    .style("fill", function(d) {
+                        return d.color;
+                    });
+            };
+
+
+            this.vis.refs.symbols.genomic
+                .selectAll(".variants")
+                .each(function(track) {
+                    var data_by_loc = self._getDataByLocationMapForTrack(track);
+
+                    var variant_group_g = d3.select(this)
+                        .selectAll(".variant.group")
+                        .data(data_by_loc);
+
+                    variant_group_g
+                        .enter()
+                        .append("svg:g")
+                        .attr("class", "variant group")
+                        .attr("transform", function(d) {
+                            return "translate(" + d.group.start_loc + ",0)";
+                        });
+
+                    variant_group_g.call(self._applyVariantTypeGroups, self.mutationIdFn, track);
+
+                    if (_.has(track, 'color_by')) {
+                        variant_group_g
+                            .selectAll(".variant-type")
+                            .each(renderBars)
+                            .on("mouseover", function(d) {
+                                track.tooltip_handlers.variants.call(this, d);
+                            });
+                    }
+                    else {
+                        variant_group_g
+                            .selectAll(".variant-type")
+                            .each(renderCircles)
+                            .on("mouseover", function(d) {
+                                track.tooltip_handlers.variants.call(this, d);
+                            });
+                    }
+                });
+        },
+
+        _buildStemData: function(track) {
+            var that = this;
+
+            var result = _.reduce(track.region_data, function(stem_array, region) {
+
+                _.each(region.variant_layout.location_groups, function(node) {
+                    var coordinate = node.data.location;
+                    _.each(node.scale.domain(), function(variant_type) {
+                        stem_array.push({
+                            sx: region.layout.get_screen_location_for_coordinate(coordinate),
+                            sy: -track.layout.variants.y,
+                            tx: node.start_loc + that.config.mutation_shape_width / 2.0 + node.scale(variant_type),
+                            ty: -track.layout.protein_scale_line.y,
+                            coordinate: coordinate
+                        });
+                    });
+                });
+
+                return stem_array;
+
+            }, []);
+
+            // Filter out invisible stems
+            var vis_coord = this.vis.visible_genomic_coordinates;
+
+            return _.filter(result, function(stem) {
+                var coord = stem.coordinate;
+                return coord >= vis_coord[0] && vis_coord[1] >= coord;
+            });
+        },
+
+        renderVariantStems: function() {
+            var that = this;
+
+            this.vis.refs.symbols.genomic
+                .selectAll(".variants")
+                .each(function(track_data) {
+                    var diagonal = d3.svg.diagonal()
+                        .projection(function(d) {
+                            return [d.x, d.y];
+                        })
+                        .source(function(d) {
+                            return {
+                                x: d.sx,
+                                y: d.sy
+                            };
+                        })
+                        .target(function(d) {
+                            return {
+                                x: d.tx,
+                                y: d.ty
+                            };
+                        });
+
+                    var stem_data = that._buildStemData(track_data),
+                        stem = d3
+                        .select(this)
+                        .selectAll("path.stem")
+                        .data(stem_data);
+
+                    var stem_exit = stem.exit();
+
+                    stem
+                        .enter()
+                        .append("svg:path")
+                        .attr("class", "stem")
+                        .style("fill", "none")
+                        .style("stroke", "gray")
+                        .style("stroke-width", that.config.mutation_groups.stems.stroke_width)
+                        .style("vector-effect", "non-scaling-stroke")
+                        .append("svg:title")
+                        .text(function(d) {
+                            return that.getMutationLabelRows(d).join("\n");
+                        });
+
+                    stem
+                        .attr("d", diagonal);
+
+                    stem_exit
+                        .remove();
+                });
+
         }
     };
 
-    var SeqPeekFactory = {
+    return {
         create: function(target_el) {
             var obj = Object.create(SeqPeekPrototype, {}),
                 guid = 'C' + vq.utils.VisUtils.guid(); // div id must start with letter
@@ -1942,55 +2713,4 @@
             return obj;
         }
     };
-
-    // jQuery Plugin
-    var methods = {
-        init : function(data, options) {
-            return this.each(function() {
-                var $this = $(this);
-                var vis;
-                $this.data("SeqPeek", (vis = SeqPeekFactory.create($this.get(0))));
-                vis.draw(data, options);
-            });
-        },
-        change_subtypes : function(new_tracks, order) {
-            return this.each(function() {
-                var vis = $(this).data("SeqPeek");
-                if (vis) {
-                    vis.changeTracks(new_tracks, order);
-                }
-            });
-        },
-        get_size: function() {
-            var vis = $(this).data("SeqPeek");
-            if (vis) {
-                return vis.getSize();
-            }
-
-            return null;
-        },
-        set_subtype_order: function() {
-            return this;
-        },
-        set_stems : function(stems_enabled) {
-            return this.each(function() {
-                var vis = $(this).data("SeqPeek");
-                if (vis) {
-                    vis.setStems(stems_enabled);
-                }
-            });
-        }
-    };
-
-    $.fn.seqpeek = function( method ) {
-        if ( methods[method] ){
-            return methods[ method ].apply( this, Array.prototype.slice.call( arguments, 1 ));
-        }
-        else if ( typeof method === 'object' || ! method ) {
-            return methods.init.apply( this, arguments );
-        }
-        else {
-            $.error( 'Method ' +  method + ' does not exist on jQuery.seqpeek' );
-        }
-    };
-}(window.jQuery);
+});
