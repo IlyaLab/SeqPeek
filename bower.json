@@ -1,0 +1,18 @@
+{
+    "name": "seqpeek",
+    "version": "0.0.0",
+    "dependencies": {
+        "requirejs": "~2.1.5",
+        "jquery": "~2.0.2",
+        "d3": "~3.2.8",
+        "underscore": "~1.4.4",
+        "font-awesome": "~3.2.1",
+        "visquick": "git://github.com/visquick/visquick"
+    },
+    "resolutions": {
+        "d3": "~3.2.8"
+    },
+    "devDependencies": {
+        
+    }
+}
