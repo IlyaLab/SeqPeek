@@ -59,7 +59,40 @@ function (
                 type_data.statistics = {
                     by_category: _.countBy(type_data.data, value_iter)
                 };
-            });
+
+                type_data.statistics.total = _.reduce(type_data.statistics.by_category, function(total, number, category) {
+                    return total + number;
+                }, 0);
+            }, {});
+        },
+
+        apply_track_statistics: function(track, data_info) {
+            var data_accessor = _make_accessor(data_info);
+
+            var totals = {},
+                totals_in_locations = [];
+
+            // Aggregate sample totals by category
+            _apply_to_variant_types(data_accessor(track), function(type_data, memo) {
+                _.each(type_data.statistics.by_category, function(value, category) {
+                    if (!_.has(totals, category)) {
+                        totals[category] = 0;
+                    }
+
+                    totals[category] += value;
+                });
+            }, {});
+
+            // Find out minimum and maximum number of samples in one location (and variant type)
+            _apply_to_variant_types(data_accessor(track), function(type_data, memo) {
+                totals_in_locations.push(type_data.statistics.total);
+            }, {});
+
+            track.statistics = {
+                by_category: totals,
+                min_samples_in_location: _.min(totals_in_locations),
+                max_samples_in_location: _.max(totals_in_locations)
+            };
         }
     }
 });
