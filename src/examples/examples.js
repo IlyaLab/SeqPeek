@@ -47,7 +47,12 @@ function (
                 [90, 'AB', 'true']
             ];
 
-            var test_track = TestUtils.build_protein_test_track(data_points);
+            var test_track = TestUtils.build_protein_test_track({
+                data: TestUtils.generate_test_data(data_points, {
+                    location: 0,
+                    value: 2
+                })
+            });
 
             _.extend(test_track, {
                 color_by: _.extend(test_track.color_by, {

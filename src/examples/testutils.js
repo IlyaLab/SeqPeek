@@ -5,23 +5,37 @@ define   (
 function (
     GeneRegionUtils
 ) {
-    return {
-        build_protein_test_track: function(data_points) {
-            var sample_cnt = 0;
+    _generate_test_data = function(data_array, fields) {
+        return _.map(data_array, function(data_row) {
+            var result = {};
 
-            var gen_data = function(location, data_id, value) {
-                var sample_id = sample_cnt;
-                sample_cnt += 1;
+            _.each(_.keys(fields), function(key) {
+                var val = fields[key];
 
-                return {
-                    location: location,
-                    mutation_id: location + '-' + data_id,
-                    sample_id: '' + sample_id,
-                    source_id: '' + sample_id,
-                    value: value
+                // The value is an index to the data row
+                if (_.isNumber(parseInt(val)) && val >= 0) {
+                    result[key] = data_row[val];
                 }
-            };
+                // The value is an index to the data row
+                if (_.isString(val) && _.isNumber(parseInt(val))) {
+                    if (val >= 0) {
+                        result[key] = data_row[val];
+                    }
+                }
+                // The value is an accessor function
+                else if (_.isFunction(val)) {
+                    result[key] = val(data_row);
+                }
+            });
 
+            return result;
+        });
+    };
+
+    return {
+        generate_test_data: _generate_test_data,
+
+        build_protein_test_track: function(config) {
             var display_labels = {
                 'true': 'true',
                 'false': 'false',
@@ -37,11 +51,7 @@ function (
                 }
             };
 
-
-            var data = _.map(data_points, function(p) {
-                return gen_data.apply(this, p);
-            });
-
+            var data = config.data;
 
             var category_sizes = _.countBy(data, function(d) {
                 return d.value;
@@ -75,23 +85,7 @@ function (
             };
         },
 
-        build_genomic_test_track: function(param_regions, data_points) {
-            var sample_cnt = 0;
-
-            var gen_data = function(protein_location, coordinate, data_id, value) {
-                var sample_id = sample_cnt;
-                sample_cnt += 1;
-
-                return {
-                    protein_location: protein_location,
-                    coordinate: coordinate,
-                    mutation_id: coordinate + '-' + data_id,
-                    sample_id: '' + sample_id,
-                    source_id: '' + sample_id,
-                    value: value
-                }
-            };
-
+        build_genomic_test_track: function(config, param_regions, data_points) {
             var display_labels = {
                 'true': 'true',
                 'false': 'false',
@@ -116,10 +110,7 @@ function (
                 }
             };
 
-            var data = _.map(data_points, function(p) {
-                return gen_data.apply(this, p);
-            });
-
+            var data = config.data;
 
             var category_sizes = _.countBy(data, function(d) {
                 return d.value;
@@ -140,7 +131,7 @@ function (
                 };
             });
 
-            var region_data = GeneRegionUtils.buildRegionsFromArray(param_regions);
+            var region_data = config.regions;
             GeneRegionUtils.fillDataIntoRegions(region_data, data, 'coordinate');
 
             return {

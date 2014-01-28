@@ -1,10 +1,12 @@
 define   (
 [
     'examples/testutils',
+    'util/gene_region_utils',
     'seqpeek'
 ],
 function (
     TestUtils,
+    GeneRegionUtils,
     SeqPeekFactory
 ) {
     var generate_region = function(transcript, type, start, end) {
@@ -52,7 +54,15 @@ function (
             return generate_region.apply(this, p);
         });
 
-        var test_track = TestUtils.build_genomic_test_track(regions, data_points);
+        var test_track = TestUtils.build_genomic_test_track({
+            regions: GeneRegionUtils.buildRegionsFromArray(regions),
+            data: TestUtils.generate_test_data(data_points, {
+                protein_loc: 0,
+                coordinate: 1,
+                variant_type: 2,
+                phenotype: 3
+            })
+        });
 
         _.extend(test_track, {
             color_by: _.extend(test_track.color_by, {
@@ -62,7 +72,6 @@ function (
                 group_names: ['true', 'false', 'na']
             })
         });
-
 
         var data = {
             protein: {
