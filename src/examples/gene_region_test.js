@@ -1,11 +1,13 @@
 define   (
 [
     'examples/testutils',
+    'util/data_adapters',
     'util/gene_region_utils',
     'seqpeek'
 ],
 function (
     TestUtils,
+    DataAdapters,
     GeneRegionUtils,
     SeqPeekFactory
 ) {
@@ -18,7 +20,7 @@ function (
     };
 
     return function(target_el) {
-        var data_points = [
+        var data_points = TestUtils.generate_test_data([
             // Coding
             [10, 1000, 'AB', 'false'],
             [10, 1000, 'AB', 'true'],
@@ -41,7 +43,12 @@ function (
 
             [60, 6050, 'AB', 'false'],
             [60, 6050, 'CD', 'false']
-        ];
+        ], {
+            protein_loc: 0,
+            coordinate: 1,
+            variant_type: 2,
+            phenotype: 3
+        });
 
         var region_data = [
             ['TEST', 'noncoding', 500, 899],
@@ -54,14 +61,12 @@ function (
             return generate_region.apply(this, p);
         });
 
+        var track_data = DataAdapters.group_by_location(data_points, 'variant_type', 'coordinate');
+        DataAdapters.apply_statistics(track_data, 'phenotype');
+
         var test_track = TestUtils.build_genomic_test_track({
             regions: GeneRegionUtils.buildRegionsFromArray(regions),
-            data: TestUtils.generate_test_data(data_points, {
-                protein_loc: 0,
-                coordinate: 1,
-                variant_type: 2,
-                phenotype: 3
-            })
+            data: track_data
         });
 
         _.extend(test_track, {

@@ -1,8 +1,10 @@
 define([
-    'underscore'
+    'underscore',
+    './data_adapters'
 ],
 function(
-    _
+    _,
+    DataAdapters
 ) {
     var build_region_common = function(start, end) {
         var region = {};
@@ -97,24 +99,12 @@ function(
         },
 
         fillDataIntoRegions: function(gene_regions, data_points, param_coordinate_getter) {
-            var coordinate_get_fn;
-            var discarded = 0;
-
-            if (_.isFunction(param_coordinate_getter)) {
-                coordinate_get_fn = param_coordinate_getter
-            }
-            else if (_.isString(param_coordinate_getter)) {
-                coordinate_get_fn = function(d) {
-                    return d[param_coordinate_getter];
-                }
-            }
-            else {
-                console.error("Coordinate getter is not a function or string");
-            }
+            var discarded = 0,
+                coordinate_iter = DataAdapters.make_iterator(param_coordinate_getter);
 
             _.each(data_points, function(d) {
                 var    bin = _.find(gene_regions, function(region) {
-                    return region.belongs(coordinate_get_fn(d));
+                    return region.belongs(coordinate_iter(d));
                 });
 
                 if (bin === undefined) {
