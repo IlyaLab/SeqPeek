@@ -100,7 +100,7 @@ function(
 
         fillDataIntoRegions: function(gene_regions, data_points, param_coordinate_getter) {
             var discarded = 0,
-                coordinate_iter = DataAdapters.make_iterator(param_coordinate_getter);
+                coordinate_iter = DataAdapters.make_accessor(param_coordinate_getter);
 
             _.each(data_points, function(d) {
                 var    bin = _.find(gene_regions, function(region) {
