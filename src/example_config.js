@@ -44,15 +44,17 @@ require.config({
 require([
     'jquery',
     'underscore',
-    'examples/examples'
+    'examples/examples',
+    'examples/region_track_test'
 ], function (
     $,
     _,
-    Examples
+    Examples,
+    RegionTrackTest
 ) {
     'use strict';
 
+    RegionTrackTest($('#region_track_test'));
     Examples.absolute_log2_test($('#protein_track_test'));
     Examples.gene_region_test($('#genomic_track_test'));
-
 });
