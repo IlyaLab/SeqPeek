@@ -7,7 +7,10 @@
         "d3": "~3.2.8",
         "underscore": "~1.4.4",
         "font-awesome": "~3.2.1",
-        "visquick": "git://github.com/visquick/visquick"
+        "visquick": "git://github.com/visquick/visquick",
+        "require-handlebars-plugin": "git://github.com/SlexAxton/require-handlebars-plugin.git#~0.4.0",
+        "handlebars": "git://github.com/components/handlebars.js#~1.0.0"
+
     },
     "resolutions": {
         "d3": "~3.2.8"
