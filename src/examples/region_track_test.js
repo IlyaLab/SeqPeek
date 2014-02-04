@@ -41,12 +41,10 @@ function (
         var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
         region_layout.process(region_data);
 
-        var region_track = RegionTrackFactory.create({
-            data: region_data,
-            dimensions: {
-                height: 30
-            }
-        });
+        var region_track = RegionTrackFactory
+            .create()
+            .height(30)
+            .data(region_data);
 
         var spctx = SeqPeekContextFactory.create(target_el);
         spctx
