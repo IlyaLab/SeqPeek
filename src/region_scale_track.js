@@ -19,10 +19,6 @@ function(
             return this.dimensions.height;
         },
 
-        setRenderingContext: function(ctx) {
-            this.rendering_context = ctx;
-        },
-
         _applySVG: function(selection, region_data) {
             selection
                 .each(function() {
@@ -83,8 +79,24 @@ function(
                             .style("fill", "blue")
                             .style("stroke", "blue");
                     });
-
             });
+        },
+
+        //////////////
+        // Data API //
+        //////////////
+        data: function(region_data) {
+            this.region_data = region_data;
+
+            return this;
+        },
+
+        height: function(height) {
+            this.dimensions = {
+                height: height
+            };
+
+            return this;
         },
 
         ///////////////////
@@ -94,7 +106,7 @@ function(
             var ctx = this._getRenderingContext();
 
             d3.select(ctx.svg)
-                .call(this._applySVG, this.data);
+                .call(this._applySVG, this.region_data);
 
             d3.select(ctx.svg)
                 .call(this._renderExon);
@@ -107,17 +119,14 @@ function(
             var ctx = this._getRenderingContext();
 
             ctx.svg.attr("transform", function() {
-                return "translate(" + ctx.getViewportPosition()['x'] + ",0)";
+                return "translate(" + ctx.getViewportPosition().x + ",0)";
             });
         }
     };
 
     return {
-        create: function(config) {
+        create: function() {
             var track = Object.create(RegionTrackPrototype, {});
-
-            track.data = config.data;
-            track.dimensions = config.dimensions;
 
             return track;
         }
