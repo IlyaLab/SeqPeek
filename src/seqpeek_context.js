@@ -2,15 +2,12 @@ define   (
 [
     'd3',
     'vq',
-    'underscore',
-
-    'seqpeek_scaling'
+    'underscore'
 ],
 function(
     d3,
     vq,
-    _,
-    ScalingFunctions
+    _
 ) {
     var SeqPeekContextPrototype = {
         _getVisualizationSize: function() {
@@ -24,21 +21,12 @@ function(
             }
         },
 
-        draw: function(data, param_config) {
-            var that = this;
+        draw: function() {
+            var self = this;
 
             this.config.target_el.innerHTML = "";
-            this.data = data;
 
-            _.extend(this.config, param_config);
-
-            this.vis = {
-                refs: {
-                    labels: {},
-                    panel: {},
-                    symbols: {}
-                }
-            };
+            this.vis = { };
 
             var size_info = this._getVisualizationSize();
 
@@ -54,7 +42,7 @@ function(
                 .translate(this.vis.viewport_pos)
                 .scale(this.vis.viewport_scale[0])
                 .on("zoom", function() {
-                    _.bind(that.zoomEventHandler, that, {}, true)();
+                    _.bind(self._zoomEventHandler, self, {}, true)();
                 });
 
             this.vis.root = d3.select(this.config.target_el)
@@ -64,23 +52,10 @@ function(
                 .attr("height", size_info.height)
                 .style("pointer-events", "none");
 
-            // Area for scale lines, reference lines and tick marks
-            this.vis.root
-                .append("g")
-                .attr("class", "panel-area")
-                .attr("x", 0.0)
-                .attr("y", 0.0)
-                .attr("width", this.vis.viewport_size[0])
-                .attr("height", this.vis.viewport_size[1])
-                //.attr("transform", "translate(" + (this.config.plot.horizontal_padding + this.config.band_label_width) + "," + this.config.plot.vertical_padding + ")")
-                .style("pointer-events", "none");
-
             // Area for graphical elements with clipping
             this.vis.data_area = this.vis.root
                 .append("svg:svg")
                 .attr("class", "data-area")
-                //.attr("x", (this.config.plot.horizontal_padding + this.config.band_label_width))
-                //.attr("y", (this.config.plot.vertical_padding))
                 .attr("width", this.vis.viewport_size[0])
                 .attr("height", this.vis.viewport_size[1])
                 .style("pointer-events", "all");
@@ -100,6 +75,16 @@ function(
             this.render();
         },
 
+        _zoomEventHandler: function() {
+            var e = d3.event;
+
+            if (this._scrollHandler !== undefined && _.isFunction(this._scrollHandler)) {
+                _.bind(this._scrollHandler, this)({
+                    translate: e.translate,
+                    scale: e.scale
+                });
+            }
+        },
 
         _buildRenderingContext: function(svg) {
             var self = this;
@@ -121,14 +106,51 @@ function(
             }
         },
 
+
+        _updateViewportTranslation: function(translate) {
+            this.vis.viewport_pos = [translate[0], 0];
+
+            this.data.track.render();
+        },
+
+        //////////////
+        // Data API //
+        //////////////
+        scroll_handler: function(scrollHandlerFN) {
+            this._scrollHandler = scrollHandlerFN;
+
+            return this;
+        },
+
+        width: function(width) {
+            this.config.dimensions = {
+                width: width
+            };
+
+            return this;
+        },
+
+        track: function(track) {
+            var self = this;
+
+            track._getRenderingContext = function() {
+                return self._buildRenderingContext(self.track_g);
+            };
+
+            this.data.track = track;
+
+            return this;
+        },
+
+        ///////////////////
+        // Rendering API //
+        ///////////////////
         render: function() {
-            var track_g = this.vis.data_area
+            this.track_g = this.vis.data_area
                 .append("g")
                 .attr("class", "seqpeek-track");
 
-            this.data.track.setRenderingContext(this._buildRenderingContext(track_g));
-
-            this.data.track.render();
+            this.data.track.draw();
         }
     };
 
@@ -136,6 +158,8 @@ function(
         create: function(target_el) {
             var obj = Object.create(SeqPeekContextPrototype, {}),
                 guid = 'C' + vq.utils.VisUtils.guid(); // div id must start with letter
+
+            obj.data = {};
 
             obj.config = {
                 target_el: target_el,

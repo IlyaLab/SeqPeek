@@ -19,20 +19,8 @@ function(
             return this.dimensions.height;
         },
 
-        getRenderingContext: function() {
-            return this.rendering_context;
-        },
-
         setRenderingContext: function(ctx) {
             this.rendering_context = ctx;
-        },
-
-        applyStackedBarRenderData: function(track, data_info) {
-            var data_accessor = DataAdapters.make_accessor(data_info);
-
-            DataAdapters.apply_to_variant_types(data_accessor(track), function(type_data, memo) {
-                type_data.render_data = _createNormalizedLinearBar(track, type_data.statistics.by_category);
-            });
         },
 
         _applySVG: function(selection, region_data) {
@@ -72,7 +60,6 @@ function(
                             })
                             .style("stroke", "black");
                     });
-
             });
         },
 
@@ -103,8 +90,8 @@ function(
         ///////////////////
         // Rendering API //
         ///////////////////
-        render: function() {
-            var ctx = this.getRenderingContext();
+        draw: function() {
+            var ctx = this._getRenderingContext();
 
             d3.select(ctx.svg)
                 .call(this._applySVG, this.data);
@@ -114,6 +101,14 @@ function(
 
             d3.select(ctx.svg)
                 .call(this._renderNonCoding);
+        },
+
+        render: function() {
+            var ctx = this._getRenderingContext();
+
+            ctx.svg.attr("transform", function() {
+                return "translate(" + ctx.getViewportPosition()['x'] + ",0)";
+            });
         }
     };
 

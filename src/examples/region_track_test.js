@@ -48,17 +48,14 @@ function (
             }
         });
 
-        var seqpeek_data = {
-            track: region_track
-
-        };
-
         var spctx = SeqPeekContextFactory.create(target_el);
-        spctx.draw(seqpeek_data, {
-            dimensions: {
-                width: 1300
-            }
-        });
+        spctx
+            .width(1300)
+            .scroll_handler(function(event) {
+                this._updateViewportTranslation(event.translate);
+            })
+            .track(region_track)
+            .draw();
     };
 
     var test_obj = Object.create(SeqPeekTestPrototype, {});
