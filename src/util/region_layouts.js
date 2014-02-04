@@ -6,6 +6,10 @@ function (
 
 ) {
     var _basic_layout_prototype = {
+        getMetadata: function() {
+            return this.metadata;
+        },
+
         process: function(region_data) {
             var self = this,
                 current_loc = 0;
@@ -40,10 +44,10 @@ function (
                 current_loc = current_loc + width + 1;
             });
 
-            return {
+            this.metadata = {
                 start_coordinate: region_data[0].start,
                 end_coordinate: _.last(region_data).end,
-                total_width:  current_loc - 1
+                total_width: current_loc - 1
             };
         }
     };
@@ -54,6 +58,11 @@ function (
                 var obj = Object.create(_basic_layout_prototype, {});
                 obj.options = {
                     noncoding_region_width: config.noncoding_region_width !== undefined ? config.noncoding_region_width : 10
+                };
+                obj.metadata = {
+                    start_coordinate: null,
+                    end_coordinate: null,
+                    total_width: null
                 };
 
                 return obj;

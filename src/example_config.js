@@ -5,7 +5,6 @@ require.config({
         jquery: './bower_components/jquery/jquery',
         "jQuery-ui": "./bower_components/jquery-ui/ui/jquery-ui",
         backbone: './bower_components/backbone/backbone',
-        bootstrap: 'vendor/bootstrap',
         d3: './bower_components/d3/d3',
         modernizr: './bower_components/modernizr',
         underscore: 'bower_components/underscore/underscore',
@@ -33,10 +32,6 @@ require.config({
         backbone : {
             deps: ['underscore', 'jquery'],
             exports: 'Backbone'
-        },
-        bootstrap : {
-            deps : ['jquery','jQuery-ui'],
-            exports : 'bootstrap'
         },
         'jquery.vislegend' : {
             deps : ['jquery', 'd3', 'underscore'],
@@ -69,7 +64,8 @@ require([
     'use strict';
 
     var testlist = [
-        RegionTrackTest
+        //RegionTrackTest
+        GeneRegionTest
     ];
 
     _.each(testlist, function(test) {

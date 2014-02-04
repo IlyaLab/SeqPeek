@@ -1,15 +1,23 @@
 define   (
 [
     'examples/testutils',
+    'examples/seqpeek_test',
     'util/data_adapters',
     'util/gene_region_utils',
-    'seqpeek'
+    'util/region_layouts',
+    'region_viewport',
+    'seqpeek_context',
+    'bar_plot_track'
 ],
 function (
     TestUtils,
+    SeqPeekTestPrototype,
     DataAdapters,
     GeneRegionUtils,
-    SeqPeekFactory
+    RegionLayouts,
+    ViewportFactory,
+    SeqPeekContextFactory,
+    BarPlotTrackFactory
 ) {
     var generate_region = function(transcript, type, start, end) {
         return {
@@ -19,7 +27,7 @@ function (
         }
     };
 
-    return function(target_el) {
+    var test_function = function(target_el) {
         var data_points = TestUtils.generate_test_data([
             // Coding
             [10, 1000, 'AB', 'false'],
@@ -50,120 +58,48 @@ function (
             phenotype: 3
         });
 
-        var region_data = [
+        var regions = _.map([
             ['TEST', 'noncoding', 500, 899],
             ['TEST', 'exon', 900, 2000],
             ['TEST', 'noncoding', 2001, 5999],
             ['TEST', 'exon', 6000, 6200]
-        ];
-
-        var regions = _.map(region_data, function(p) {
+        ], function(p) {
             return generate_region.apply(this, p);
         });
+
+        var region_layout = RegionLayouts.BasicLayoutFactory
+            .create({});
+
+        var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
+        region_layout.process(region_data);
+        var region_metadata = region_layout.getMetadata();
 
         var track_data = DataAdapters.group_by_location(data_points, 'variant_type', 'coordinate');
         DataAdapters.apply_statistics(track_data, 'phenotype');
 
-        var test_track = TestUtils.build_genomic_test_track({
-            regions: GeneRegionUtils.buildRegionsFromArray(regions),
-            data: track_data
-        });
+        var test_track = BarPlotTrackFactory
+            .create()
+            .data(track_data, 'variants')
+            .height(150);
 
-        _.extend(test_track, {
-            color_by: _.extend(test_track.color_by, {
-                color_scale: d3.scale.ordinal().domain(['true', 'false', 'na']).range(['#1f77b4', '#ff7f0e', '#ff0000']),
-                type: 'log2nabs',
-                max_height: 100,
-                group_names: ['true', 'false', 'na']
+        DataAdapters.apply_track_statistics(test_track, 'variants');
+
+        var spctx = SeqPeekContextFactory.create(target_el);
+        spctx
+            .width(1300)
+            .scroll_handler(function(event) {
+                this._updateViewportTranslation(event.translate);
             })
-        });
+            .track(test_track)
+            .viewport(ViewportFactory.createFromRegionData(region_data, region_metadata, 1300))
+            .draw();
+    };
 
-        var data = {
-            protein: {
-                domains: [],
-                length: 100,
-                name: 'TEST',
-                uniprot_id: 'TEST'
-            },
-            tracks: [
-                _.extend(test_track, {
-                    label: 'GENOMIC TRACK'
-                })
-            ]
-        };
+    var test_obj = Object.create(SeqPeekTestPrototype, {});
+    test_obj.title = "Genomic data rendering";
+    test_obj.description = "Add description here...";
+    test_obj.height = 150;
+    test_obj.test_function = test_function;
 
-        var options = {
-            location_tick_height: 25,
-            protein_scale: {
-                width: 1300,
-                vertical_padding: 10
-            },
-            protein_domains: {
-                padding: 10,
-                key: 'dbname'
-            },
-            signature_height: 10,
-            enable_transitions: false,
-            enable_mutation_stems: true,
-            mutation_layout: 'all_subtypes',
-            variant_layout: 'all_subtypes',
-            mutation_groups: {
-                padding: 0,
-                stems: {
-                    height: 20,
-                    stroke_width: 1.0
-                }
-            },
-            mutation_shape_width: 5,
-            mutation_order: [
-                "SUBSTITUTION",
-                "POSSIBLE-SPLICE5/SUBSTITUTION"
-            ],
-            mutation_sample_id_field: 'source_id',
-            mutation_color_field: 'type',
-            mutation_colors: {
-                SUBSTITUTION: 'red',
-                "POSSIBLE-SPLICE5/SUBSTITUTION": 'green',
-                Frame_Shift_Del: 'gold',
-                Frame_Shift_Ins: 'gold',
-                Missense_Mutation: 'blue'
-            },
-            mutation_label_rows: [
-                {label: 'ID', name: 'mutation_id'},
-                {label: 'Location', name: 'location'}
-            ],
-            plot: {
-                horizontal_padding: 0,
-                vertical_padding: 0
-            },
-            band_label_width: 180,
-            tooltips: {
-                interpro: {
-                    items: {
-                        "DB": function(d) {
-                            return d.dbname;
-                        },
-                        "EVD": function(d) {
-                            return d.evd;
-                        },
-                        "ID": function(d) {
-                            return d.id;
-                        },
-                        "Name": function(d) {
-                            return d.name;
-                        },
-                        "Status": function(d) {
-                            return d.status;
-                        },
-                        "LOC": function(d) {
-                            return d.location.start + " - " + d.location.end;
-                        }
-                    }
-                }
-            }
-        };
-
-        var vis = SeqPeekFactory.create(target_el[0]);
-        vis.draw(data, options);
-    }
+    return test_obj;
 });

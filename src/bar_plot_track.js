@@ -14,7 +14,7 @@ function(
     ScalingFunctions,
     DataAdapters
 ) {
-    _createNormalizedLinearBar = function(track, samples_by_categories) {
+    _createNormalizedLinearBars = function(track, samples_by_categories) {
         var category_sizes = track.statistics.by_category,
             min_height = 10.0,
             max_height = 300.0,
@@ -76,24 +76,62 @@ function(
     };
 
     var BarPlotTrackPrototype = {
-        applyStackedBarRenderData: function(track, data_info) {
+        getHeight: function() {
+            return this.dimensions.height;
+        },
+
+        setRenderingContext: function(ctx) {
+            this.rendering_context = ctx;
+        },
+
+        _applyStackedBarRenderData: function(track, data_info) {
             var data_accessor = DataAdapters.make_accessor(data_info);
 
             DataAdapters.apply_to_variant_types(data_accessor(track), function(type_data, memo) {
-                type_data.render_data = _createNormalizedLinearBar(track, type_data.statistics.by_category);
+                type_data.render_data = _createNormalizedLinearBars(track, type_data.statistics.by_category);
             });
         },
 
-        render: function(rendering_context) {
+        //////////////
+        // Data API //
+        //////////////
+        data: function(data, data_key) {
+            this._applyStackedBarRenderData(data, data_key);
+            this.location_data = data;
 
+            return this;
+        },
+
+        height: function(height) {
+            this.dimensions = {
+                height: height
+            };
+
+            return this;
+        },
+
+        ///////////////////
+        // Rendering API //
+        ///////////////////
+        viewport: function(param_viewport) {
+
+        },
+
+        draw: function() {
+            var ctx = this.getRenderingContext();
+
+            d3.select(ctx.svg)
+                .call(this._applySVG, this.data);
+        },
+
+        render: function() {
+            var ctx = this._getRenderingContext();
         }
     };
 
     return {
         create: function(config) {
             var track = Object.create(BarPlotTrackPrototype, {});
-
-            track.data = config.data;
 
             return track;
         }
