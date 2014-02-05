@@ -17,7 +17,7 @@ function (
                 }
             }
 
-            return _.last(region_data).end;
+            return _.last(this.region_data).end;
         },
 
         _getVisibleCoordinates: function(viewport_x) {
@@ -40,15 +40,13 @@ function (
     };
 
     return {
-        create: function() {
-            console.error("Not implemented");
-        },
-
         createFromRegionData: function(region_data, metadata, width) {
             var obj = Object.create(prototype, {});
             obj.region_data = region_data;
             obj.region_metadata = metadata;
             obj.width = width;
+
+            return obj;
         }
     }
 });

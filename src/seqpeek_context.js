@@ -102,6 +102,9 @@ function(
                         x: self.vis.viewport_pos[0],
                         y: self.vis.viewport_pos[1]
                     }
+                },
+                getVisibleCoordinates: function() {
+                    return self.region_layout._getVisibleCoordinates(-self.vis.viewport_pos[0]);
                 }
             }
         },
@@ -116,6 +119,12 @@ function(
         //////////////
         // Data API //
         //////////////
+        viewport: function(param_viewport) {
+            this.region_layout = param_viewport;
+
+            return this;
+        },
+
         scroll_handler: function(scrollHandlerFN) {
             this._scrollHandler = scrollHandlerFN;
 

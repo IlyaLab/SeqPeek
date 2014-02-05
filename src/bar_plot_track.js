@@ -113,15 +113,8 @@ function(
         ///////////////////
         // Rendering API //
         ///////////////////
-        viewport: function(param_viewport) {
-
-        },
-
         draw: function() {
-            var ctx = this.getRenderingContext();
-
-            d3.select(ctx.svg)
-                .call(this._applySVG, this.data);
+            var ctx = this._getRenderingContext();
         },
 
         render: function() {
