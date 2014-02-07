@@ -80,6 +80,8 @@ function (
         var test_track = BarPlotTrackFactory
             .create()
             .data(track_data, 'variants')
+            .regions(region_data, 'coordinate')
+            .stem_height(30)
             .height(150);
 
         DataAdapters.apply_track_statistics(test_track, 'variants');
