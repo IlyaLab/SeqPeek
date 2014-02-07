@@ -16,6 +16,12 @@ function (
         }
     };
 
+    var _apply_to_variant_locations = function(param_data, fn, memo) {
+        _.each(param_data, function(data_by_location, location) {
+            fn(data_by_location, memo);
+        });
+    };
+
     var _apply_to_variant_types = function(param_data, fn, memo) {
         _.each(param_data, function(data_by_location, location) {
             _.each(data_by_location, function(data_by_type, type) {
@@ -28,6 +34,7 @@ function (
 
     return {
         make_accessor: _make_accessor,
+        apply_to_variant_locations: _apply_to_variant_locations,
         apply_to_variant_types: _apply_to_variant_types,
 
         group_by_location: function(param_data, type_info, location_info) {
