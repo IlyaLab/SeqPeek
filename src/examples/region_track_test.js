@@ -5,6 +5,7 @@ define   (
     'util/data_adapters',
     'util/gene_region_utils',
     'util/region_layouts',
+    'region_viewport',
     'seqpeek_context',
     'region_scale_track'
 ],
@@ -14,6 +15,7 @@ function (
     DataAdapters,
     GeneRegionUtils,
     RegionLayouts,
+    ViewportFactory,
     SeqPeekContextFactory,
     RegionTrackFactory
 ) {
@@ -35,11 +37,13 @@ function (
             return generate_region.apply(this, p);
         });
 
+        var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
+
         var region_layout = RegionLayouts.BasicLayoutFactory
             .create({});
 
-        var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
         region_layout.process(region_data);
+        var region_metadata = region_layout.getMetadata();
 
         var region_track = RegionTrackFactory
             .create()
@@ -53,6 +57,7 @@ function (
                 this._updateViewportTranslation(event.translate);
             })
             .track(region_track)
+            .viewport(ViewportFactory.createFromRegionData(region_data, region_metadata, 1300))
             .draw();
     };
 
