@@ -103,7 +103,7 @@ function(
                 coordinate_iter = DataAdapters.make_accessor(param_coordinate_getter);
 
             _.each(data_points, function(d) {
-                var    bin = _.find(gene_regions, function(region) {
+                var bin = _.find(gene_regions, function(region) {
                     return region.belongs(coordinate_iter(d));
                 });
 
@@ -112,6 +112,33 @@ function(
                 }
                 else {
                     bin.data.push(d);
+                }
+            });
+
+            if (discarded > 0) {
+                console.warn(discarded + " data points do not match into any region");
+            }
+        },
+
+        iterateDataWithRegions: function(gene_regions, data_points, param_coordinate_getter, handler, context) {
+            var discarded = 0,
+                coordinate_iter = DataAdapters.make_accessor(param_coordinate_getter);
+
+            _.each(data_points, function(d) {
+                var bin = _.find(gene_regions, function(region) {
+                    return region.belongs(coordinate_iter(d));
+                });
+
+                if (bin === undefined) {
+                    discarded = discarded + 1;
+                }
+                else {
+                    //bin.data.push(d);
+
+                    handler({
+                        region: bin,
+                        data: d
+                    });
                 }
             });
 

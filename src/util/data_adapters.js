@@ -26,7 +26,7 @@ function (
         _.each(param_data, function(data_by_location, location) {
             _.each(data_by_location, function(data_by_type, type) {
                 _.each(data_by_location.types, function(type_data) {
-                    fn(type_data, memo);
+                    fn(type_data, memo, data_by_location);
                 });
             });
         });
