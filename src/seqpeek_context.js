@@ -21,22 +21,25 @@ function(
             }
         },
 
+
+        init: function() {
+            this.vis = {
+                viewport_pos: [0, 0],
+                viewport_scale: [1, 1]
+            };
+        },
+
         draw: function() {
             var self = this;
 
             this.config.target_el.innerHTML = "";
 
-            this.vis = { };
 
             var size_info = this._getVisualizationSize();
 
             this.vis.size_info = size_info;
 
             this.vis.viewport_size = [this.config.dimensions.width, size_info.height];
-            this.vis.viewport_scale = [1, 1];
-            this.vis.viewport_pos = [0, 0];
-
-            this.vis.visible_coordinates = [0, 1500];
 
             this.vis.zoom = d3.behavior.zoom()
                 .translate(this.vis.viewport_pos)
@@ -86,9 +89,38 @@ function(
             }
         },
 
+        _buildRenderStateInfo: function() {
+            var self = this;
+            return {
+                getViewportDimensions: function() {
+                    return {
+                        width: self.vis.viewport_size[0],
+                        height: self.vis.viewport_size[1]
+                    }
+                },
+                getViewportPosition: function() {
+                    return {
+                        x: self.vis.viewport_pos[0],
+                        y: self.vis.viewport_pos[1]
+                    }
+                },
+                getVisibleCoordinates: function() {
+                    return self.region_layout._getVisibleCoordinates(-self.vis.viewport_pos[0]);
+                },
+                getVariantLayout: function() {
+                    return self.config.variant_layout;
+                }
+            }
+        },
+
         _buildRenderingContext: function(svg) {
             var self = this;
 
+            return _.extend(this._buildRenderStateInfo(), {
+                svg: svg
+            });
+
+            /*
             return {
                 svg: svg,
                 getViewportDimensions: function() {
@@ -105,10 +137,13 @@ function(
                 },
                 getVisibleCoordinates: function() {
                     return self.region_layout._getVisibleCoordinates(-self.vis.viewport_pos[0]);
+                },
+                getVariantLayout: function() {
+                    return self.config.variant_layout;
                 }
             }
+            */
         },
-
 
         _updateViewportTranslation: function(translate) {
             this.vis.viewport_pos = [translate[0], 0];
@@ -154,7 +189,12 @@ function(
         ///////////////////
         // Rendering API //
         ///////////////////
+        getCurrentViewport: function() {
+            return this._buildRenderStateInfo();
+        },
+
         render: function() {
+
             this.track_g = this.vis.data_area
                 .append("g")
                 .attr("class", "seqpeek-track");
@@ -174,6 +214,8 @@ function(
                 target_el: target_el,
                 guid: guid
             };
+
+            obj.init();
 
             return obj;
         }
