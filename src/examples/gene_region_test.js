@@ -81,7 +81,7 @@ function (
             .add_track_data(data_points)
             .location_field('coordinate')
             .variant_type_field('variant_type')
-            .variant_width(10.0)
+            .variant_width(5.0)
             .regions(region_data)
             .process();
 
@@ -98,6 +98,7 @@ function (
             .data(track_data, 'variants')
             .regions(region_data, 'coordinate')
             .variant_layout(variant_layout)
+            .bar_width(5.0)
             .stem_height(30)
             .height(150);
 

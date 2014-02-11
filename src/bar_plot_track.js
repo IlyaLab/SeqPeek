@@ -105,7 +105,8 @@ function(
         },
 
         _buildBarRenderData: function() {
-            var ctx = this._getRenderingContext(),
+            var self = this,
+                ctx = this._getRenderingContext(),
                 variant_layout = this.getVariantLayout(),
                 viewport_x = ctx.getViewportPosition().x,
                 bar_rendering_data = [];
@@ -115,7 +116,7 @@ function(
 
                 _.each(type_data.render_data.array, function(bar_data) {
                     bar_rendering_data.push(_.extend(bar_data, {
-                        screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data.type) + viewport_x
+                        screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data.type) + viewport_x - self.config.bar_width / 2.0
                     }));
                 });
             }, {});
@@ -186,6 +187,12 @@ function(
             return this;
         },
 
+        bar_width: function(value) {
+            this.config.bar_width = value;
+
+            return this;
+        },
+
         stem_height: function(height) {
             this.config.stem_height = height;
 
@@ -221,7 +228,7 @@ function(
                     .attr("y", function(d) {
                         return d.y;
                     })
-                    .attr("width", 5.0)
+                    .attr("width", self.config.bar_width)
                     .attr("height", function(d) {
                         return d.height;
                     })

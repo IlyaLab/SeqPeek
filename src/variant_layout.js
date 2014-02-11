@@ -62,11 +62,15 @@ function (
             return this;
         },
 
+        _findScreenLocationForFirstType: function() {
+
+        },
+
         doLayoutForViewport: function(visible_coordinates, viewport_x) {
             var self = this,
                 start = visible_coordinates[0],
                 stop = visible_coordinates[1],
-                current_location = viewport_x;
+                current_location = 0.0;
 
             var visible_data_points = _.chain(this.grouped_data)
                 .filter(function(data_point) {
@@ -78,19 +82,31 @@ function (
 
             this.layout_map = {};
             GeneRegionUtils.iterateDataWithRegions(this.region_data, visible_data_points, this.location_accessor, function(d) {
-                var location = self.location_accessor(d.data);
+                var location = self.location_accessor(d.data),
+                    coordinate_center = d.region.layout.get_location_in_local_scale(location),
+                    region_start_screen_location = d.region.layout.get_location_in_local_scale(d.region.start),
+                    num_types = d.data.types.length,
+                    group_width = num_types * self.variant_width_value,
+                    type_scale = d3.scale.ordinal()
+                        .domain(_.pluck(d.data.types, 'type'))
+                        .range([0, group_width]);
+
+                current_location = _.max(
+                    [
+                        current_location + group_width / 2.0,
+                        coordinate_center - group_width / 2.0
+                    ]);
 
                 _.chain(d.data.types)
                     .sortBy(function(type_data) {
                         return type_data.type;
                     })
                     .each(function(type_data) {
-                        var variant_screen_loc = d.region.layout.get_location_in_local_scale(location);
-                        variant_screen_loc = variant_screen_loc > current_location ? variant_screen_loc : current_location;
-
-                        _put_variant_screen_location(self.layout_map, location, type_data.type, variant_screen_loc);
-                        current_location += (self.variant_width_value);
+                        var variant_screen_location = current_location + type_scale(type_data.type);
+                        _put_variant_screen_location(self.layout_map, location, type_data.type, variant_screen_location);
                     });
+
+                current_location += group_width / 2.0;
             });
 
             return this;
