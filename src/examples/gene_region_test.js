@@ -7,6 +7,7 @@ define   (
     'util/region_layouts',
     'region_viewport',
     'seqpeek_context',
+    'variant_layout',
     'bar_plot_track'
 ],
 function (
@@ -17,6 +18,7 @@ function (
     RegionLayouts,
     ViewportFactory,
     SeqPeekContextFactory,
+    VariantLayoutFactory,
     BarPlotTrackFactory
 ) {
     var generate_region = function(transcript, type, start, end) {
@@ -67,20 +69,35 @@ function (
             return generate_region.apply(this, p);
         });
 
+        var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
+
         var region_layout = RegionLayouts.BasicLayoutFactory
             .create({});
 
-        var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
         region_layout.process(region_data);
         var region_metadata = region_layout.getMetadata();
+
+        var variant_layout = VariantLayoutFactory.create({})
+            .add_track_data(data_points)
+            .location_field('coordinate')
+            .variant_type_field('variant_type')
+            .variant_width(10.0)
+            .regions(region_data)
+            .process();
 
         var track_data = DataAdapters.group_by_location(data_points, 'variant_type', 'coordinate');
         DataAdapters.apply_statistics(track_data, 'phenotype');
 
         var test_track = BarPlotTrackFactory
             .create()
+            .color_scheme({
+                'true': '#fd8f42',
+                'false': '#84acba',
+                'na': '#817843'
+            })
             .data(track_data, 'variants')
             .regions(region_data, 'coordinate')
+            .variant_layout(variant_layout)
             .stem_height(30)
             .height(150);
 
@@ -90,11 +107,18 @@ function (
         spctx
             .width(1300)
             .scroll_handler(function(event) {
+                var visible_coordinates = this.region_layout._getVisibleCoordinates(-this.vis.viewport_pos[0]);
+                variant_layout.doLayoutForViewport(visible_coordinates, this.vis.viewport_pos[0]);
+
                 this._updateViewportTranslation(event.translate);
             })
             .track(test_track)
-            .viewport(ViewportFactory.createFromRegionData(region_data, region_metadata, 1300))
-            .draw();
+            .viewport(ViewportFactory.createFromRegionData(region_data, region_metadata, 1300));
+
+        var initial_viewport = spctx.getCurrentViewport();
+        variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), initial_viewport.getViewportPosition().x);
+
+        spctx.draw();
     };
 
     var test_obj = Object.create(SeqPeekTestPrototype, {});
