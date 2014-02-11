@@ -36,6 +36,9 @@ function (
                     screen_height: 10.0,
                     coordinate_scale: coordinate_scale,
                     inverse_scale: inverse_scale,
+                    get_location_in_local_scale: function(coordinate) {
+                        return coordinate_scale(coordinate);
+                    },
                     get_screen_location_for_coordinate: function(coordinate, rendering_context) {
                         return coordinate_scale(coordinate) + rendering_context.getViewportPosition()['x'];
                     }
