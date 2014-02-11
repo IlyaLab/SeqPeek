@@ -21,7 +21,6 @@ function(
             }
         },
 
-
         init: function() {
             this.vis = {
                 viewport_pos: [0, 0],
@@ -99,9 +98,11 @@ function(
                     }
                 },
                 getViewportPosition: function() {
+                    var viewport_pos = self.region_layout.getViewportPosition();
+
                     return {
-                        x: self.vis.viewport_pos[0],
-                        y: self.vis.viewport_pos[1]
+                        x: viewport_pos.x,
+                        y: viewport_pos.y
                     }
                 },
                 getVisibleCoordinates: function() {
@@ -114,39 +115,13 @@ function(
         },
 
         _buildRenderingContext: function(svg) {
-            var self = this;
-
             return _.extend(this._buildRenderStateInfo(), {
                 svg: svg
             });
-
-            /*
-            return {
-                svg: svg,
-                getViewportDimensions: function() {
-                    return {
-                        width: self.vis.viewport_size[0],
-                        height: self.vis.viewport_size[1]
-                    }
-                },
-                getViewportPosition: function() {
-                    return {
-                        x: self.vis.viewport_pos[0],
-                        y: self.vis.viewport_pos[1]
-                    }
-                },
-                getVisibleCoordinates: function() {
-                    return self.region_layout._getVisibleCoordinates(-self.vis.viewport_pos[0]);
-                },
-                getVariantLayout: function() {
-                    return self.config.variant_layout;
-                }
-            }
-            */
         },
 
         _updateViewportTranslation: function(translate) {
-            this.vis.viewport_pos = [translate[0], 0];
+            this.vis.viewport_pos = this.region_layout.getViewportPosition();
 
             this.data.track.render();
         },

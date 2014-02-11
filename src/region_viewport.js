@@ -20,8 +20,9 @@ function (
             return _.last(this.region_data).end;
         },
 
-        _getVisibleCoordinates: function(viewport_x) {
-            var min_x = d3.max([viewport_x, 0]),
+        _getVisibleCoordinates: function(param) {
+            var viewport_x = this.viewport_pos.x,
+                min_x = d3.max([viewport_x, 0]),
                 max_x = d3.min([viewport_x + self.width, self.width]);
 
             var start = this._getCoordinateFromScaleLocation(min_x);
@@ -36,6 +37,18 @@ function (
             }
 
             return [start, end];
+        },
+
+        getViewportPosition: function() {
+            return this.viewport_pos;
+        },
+
+        setViewportPosition: function(param) {
+            this.viewport_pos = param;
+        },
+
+        translate: function(x_translation) {
+
         }
     };
 
@@ -44,6 +57,10 @@ function (
             var obj = Object.create(prototype, {});
             obj.region_data = region_data;
             obj.region_metadata = metadata;
+            obj.viewport_pos = {
+                x: 0,
+                y: 0
+            };
             obj.width = width;
 
             return obj;
