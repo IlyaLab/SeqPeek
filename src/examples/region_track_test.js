@@ -24,7 +24,7 @@ function (
             type: type,
             start: start,
             end: end
-        }
+        };
     };
 
     var test_function = function(target_el) {
@@ -50,14 +50,21 @@ function (
             .height(30)
             .data(region_data);
 
+        var viewport = ViewportFactory.createFromRegionData(region_data, region_metadata, 1300);
+
         var spctx = SeqPeekContextFactory.create(target_el);
         spctx
             .width(1300)
             .scroll_handler(function(event) {
+                viewport.setViewportPosition({
+                    x: event.translate[0],
+                    y: 0
+                });
+
                 this._updateViewportTranslation(event.translate);
             })
             .track(region_track)
-            .viewport(ViewportFactory.createFromRegionData(region_data, region_metadata, 1300))
+            .viewport(viewport)
             .draw();
     };
 
