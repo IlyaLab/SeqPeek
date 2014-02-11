@@ -106,7 +106,7 @@ define   (
 
             var viewport = ViewportFactory.createFromRegionData(region_data, region_metadata, 1300);
 
-            var spctx = SeqPeekContextFactory.create(target_el);
+            var spctx = SeqPeekContextFactory.createIntoDiv(target_el);
             spctx
                 .width(1300)
                 .scroll_handler(function(event) {

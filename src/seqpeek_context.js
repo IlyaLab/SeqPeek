@@ -120,7 +120,7 @@ function(
             });
         },
 
-        _updateViewportTranslation: function(translate) {
+        _updateViewportTranslation: function() {
             this.vis.viewport_pos = this.region_layout.getViewportPosition();
 
             this.data.track.render();
@@ -179,7 +179,7 @@ function(
     };
 
     return {
-        create: function(target_el) {
+        createIntoDiv: function(target_el) {
             var obj = Object.create(SeqPeekContextPrototype, {}),
                 guid = 'C' + vq.utils.VisUtils.guid(); // div id must start with letter
 
