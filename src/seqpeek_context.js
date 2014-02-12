@@ -11,13 +11,9 @@ function(
 ) {
     var SeqPeekContextPrototype = {
         _getVisualizationSize: function() {
-            var height = d3.sum([this.data.track], function(track) {
-                return track.getHeight();
-            });
-
             return {
                 width: this.config.dimensions.width,
-                height: height
+                height: this.data.track.getHeight()
             }
         },
 

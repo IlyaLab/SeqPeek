@@ -151,7 +151,7 @@ define   (
             });
 
             var visible_coordinates = common_viewport._getVisibleCoordinates();
-            variant_layout.doLayoutForViewport(visible_coordinates, common_viewport.getViewportPosition().x);
+            variant_layout.doLayoutForViewport(visible_coordinates);
 
             // Scroll the bar plot context
             _.bind(bar_plot_context._updateViewportTranslation, bar_plot_context)();
