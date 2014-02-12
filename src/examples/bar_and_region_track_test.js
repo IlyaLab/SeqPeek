@@ -1,28 +1,28 @@
 define   (
-    [
-        'examples/testutils',
-        'examples/seqpeek_test',
-        'util/data_adapters',
-        'util/gene_region_utils',
-        'util/region_layouts',
-        'seqpeek_viewport',
-        'seqpeek_svg_context',
-        'variant_layout',
-        '../tracks/bar_plot_track',
-        '../tracks/region_scale_track'
-    ],
-    function (
-        TestUtils,
-        SeqPeekTestPrototype,
-        DataAdapters,
-        GeneRegionUtils,
-        RegionLayouts,
-        ViewportFactory,
-        SeqPeekSVGContextFactory,
-        VariantLayoutFactory,
-        BarPlotTrackFactory,
-        RegionTrackFactory
-    ) {
+[
+    'examples/testutils',
+    'examples/seqpeek_test',
+    'util/data_adapters',
+    'util/gene_region_utils',
+    'util/region_layouts',
+    'seqpeek_viewport',
+    'seqpeek_svg_context',
+    'variant_layout',
+    '../tracks/bar_plot_track',
+    '../tracks/region_scale_track'
+],
+function (
+    TestUtils,
+    SeqPeekTestPrototype,
+    DataAdapters,
+    GeneRegionUtils,
+    RegionLayouts,
+    ViewportFactory,
+    SeqPeekSVGContextFactory,
+    VariantLayoutFactory,
+    BarPlotTrackFactory,
+    RegionTrackFactory
+) {
     var generate_region = function(transcript, type, start, end) {
         return {
             type: type,
@@ -48,6 +48,14 @@ define   (
             [20, 1020, 'AB', 'false'],
             [20, 1020, 'AB', 'true'],
 
+            [11, 1300, 'XY', 'true'],
+            [12, 1300, 'XY', 'true'],
+            [12, 1300, 'XY', 'true'],
+
+            [20, 1300, 'AB', 'false'],
+            [20, 1300, 'AB', 'false'],
+            [20, 1300, 'AB', 'true'],
+
             // Non-coding
             [30, 3000, 'AB', 'true'],
             [30, 3000, 'AB', 'true'],
@@ -64,7 +72,7 @@ define   (
 
         var regions = _.map([
             ['TEST', 'noncoding', 500, 899],
-            ['TEST', 'exon', 900, 1200],
+            ['TEST', 'exon', 900, 1800],
             ['TEST', 'noncoding', 2001, 5999],
             ['TEST', 'exon', 6000, 6200]
         ], function(p) {
@@ -74,7 +82,8 @@ define   (
         var region_data = GeneRegionUtils.buildRegionsFromArray(regions);
 
         var region_layout = RegionLayouts.BasicLayoutFactory
-            .create({});
+            .create({})
+            .intron_width(30);
 
         region_layout.process(region_data);
         var region_metadata = region_layout.getMetadata();

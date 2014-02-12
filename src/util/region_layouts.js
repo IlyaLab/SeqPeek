@@ -10,6 +10,12 @@ function (
             return this.metadata;
         },
 
+        intron_width: function(value) {
+            this.options.noncoding_region_width = value;
+
+            return this;
+        },
+
         process: function(region_data) {
             var self = this,
                 current_loc = 0;
