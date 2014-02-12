@@ -5,11 +5,11 @@ define   (
         'util/data_adapters',
         'util/gene_region_utils',
         'util/region_layouts',
-        'region_viewport',
-        'seqpeek_context',
+        'seqpeek_viewport',
+        'seqpeek_svg_context',
         'variant_layout',
-        'bar_plot_track',
-        'region_scale_track'
+        '../tracks/bar_plot_track',
+        '../tracks/region_scale_track'
     ],
     function (
         TestUtils,
@@ -18,7 +18,7 @@ define   (
         GeneRegionUtils,
         RegionLayouts,
         ViewportFactory,
-        SeqPeekContextFactory,
+        SeqPeekSVGContextFactory,
         VariantLayoutFactory,
         BarPlotTrackFactory,
         RegionTrackFactory
@@ -64,7 +64,7 @@ define   (
 
         var regions = _.map([
             ['TEST', 'noncoding', 500, 899],
-            ['TEST', 'exon', 900, 2000],
+            ['TEST', 'exon', 900, 1200],
             ['TEST', 'noncoding', 2001, 5999],
             ['TEST', 'exon', 6000, 6200]
         ], function(p) {
@@ -111,7 +111,7 @@ define   (
 
         var region_track = RegionTrackFactory
             .create()
-            .height(30)
+            .height(20)
             .data(region_data);
 
         //////////////
@@ -126,23 +126,26 @@ define   (
         ////////////////////////////////////////
         // Create SVG element for both tracks //
         ////////////////////////////////////////
-        var bar_plot_track_svg = d3.select(target_el)
+        var vis_svg = d3.select(target_el)
             .append("svg")
             .attr("width", 1300)
-            .attr("height", 150)
+            .attr("height", 170)
             .style("pointer-events", "none");
 
-        var region_track_svg = d3.select(target_el)
-            .append("svg")
-            .attr("width", 1300)
-            .attr("height", 30)
+        var bar_plot_track_svg = vis_svg
+            .append("g")
+            .style("pointer-events", "none");
+
+        var region_track_svg = vis_svg
+            .append("g")
+            .attr("transform", "translate(0,150)")
             .style("pointer-events", "none");
 
         /////////////////////////////////////////////
         // Set up rendering context for each track //
         /////////////////////////////////////////////
-        var bar_plot_context = SeqPeekContextFactory.createIntoSVG(bar_plot_track_svg);
-        var region_scale_ctx = SeqPeekContextFactory.createIntoSVG(region_track_svg);
+        var bar_plot_context = SeqPeekSVGContextFactory.createIntoSVG(bar_plot_track_svg);
+        var region_scale_ctx = SeqPeekSVGContextFactory.createIntoSVG(region_track_svg);
 
         var scroll_handler = function(event) {
             common_viewport.setViewportPosition({

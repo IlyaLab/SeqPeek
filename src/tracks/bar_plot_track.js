@@ -4,15 +4,13 @@ define   (
     'vq',
     'underscore',
 
-    'seqpeek_scaling',
-    'util/data_adapters',
-    'util/gene_region_utils'
+    '../util/data_adapters',
+    '../util/gene_region_utils'
 ],
 function(
     d3,
     vq,
     _,
-    ScalingFunctions,
     DataAdapters,
     GeneRegionUtils
 ) {

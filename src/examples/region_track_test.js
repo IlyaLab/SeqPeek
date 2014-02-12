@@ -5,9 +5,9 @@ define   (
     'util/data_adapters',
     'util/gene_region_utils',
     'util/region_layouts',
-    'region_viewport',
-    'seqpeek_context',
-    'region_scale_track'
+    'seqpeek_viewport',
+    'seqpeek_svg_context',
+    '../tracks/region_scale_track'
 ],
 function (
     TestUtils,
@@ -16,7 +16,7 @@ function (
     GeneRegionUtils,
     RegionLayouts,
     ViewportFactory,
-    SeqPeekContextFactory,
+    SeqPeekSVGContextFactory,
     RegionTrackFactory
 ) {
     var generate_region = function(transcript, type, start, end) {
@@ -52,7 +52,7 @@ function (
 
         var viewport = ViewportFactory.createFromRegionData(region_data, region_metadata, 1300);
 
-        var spctx = SeqPeekContextFactory.createIntoDiv(target_el);
+        var spctx = SeqPeekSVGContextFactory.createIntoDiv(target_el);
         spctx
             .width(1300)
             .scroll_handler(function(event) {
