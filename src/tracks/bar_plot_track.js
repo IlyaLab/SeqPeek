@@ -1,7 +1,6 @@
 define   (
 [
     'd3',
-    'vq',
     'underscore',
 
     '../util/data_adapters',
@@ -10,7 +9,6 @@ define   (
 ],
 function(
     d3,
-    vq,
     _,
     DataAdapters,
     GeneRegionUtils,

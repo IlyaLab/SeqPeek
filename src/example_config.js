@@ -53,19 +53,22 @@ require([
     'underscore',
     'hbs!examples/templates/test',
     'examples/gene_region_test',
-    'examples/region_track_test'
+    'examples/region_track_test',
+    'examples/bar_and_region_track_test'
 ], function (
     $,
     _,
     TestTemplate,
     GeneRegionTest,
-    RegionTrackTest
+    RegionTrackTest,
+    BarAndRegionTrackTest
 ) {
     'use strict';
 
     var testlist = [
-        //RegionTrackTest
-        GeneRegionTest
+        //RegionTrackTest,
+        //GeneRegionTest
+        BarAndRegionTrackTest
     ];
 
     _.each(testlist, function(test) {

@@ -1,18 +1,11 @@
 define   (
 [
     'd3',
-    'vq',
-    'underscore',
-
-    'seqpeek_scaling',
-    'util/data_adapters'
+    'underscore'
 ],
 function(
     d3,
-    vq,
-    _,
-    ScalingFunctions,
-    DataAdapters
+    _
 ) {
     var RegionTrackPrototype = {
         getHeight: function() {
@@ -42,21 +35,20 @@ function(
             ctx.svg.selectAll(".region.exon")
                 .each(function() {
                     d3.select(this)
-                        .append("svg:line")
+                        .append("svg:rect")
                         .attr("class", "x-scale")
-                        .attr("x1", function(d) {
+                        .attr("x", function(d) {
                             return 0.0;
                         })
-                        .attr("x2", function(d) {
+                        .attr("width", function(d) {
                             return d.layout.screen_width;
                         })
-                        .attr("y1", function(d) {
-                            return d.layout.screen_height;
+                        .attr("y", function(d) {
+                            return 0.0;
                         })
-                        .attr("y2", function(d) {
-                            return d.layout.screen_height;
-                        })
-                        .style("stroke", "black");
+                        .attr("height", self.getHeight())
+                        .style("fill", "lightgray")
+                        .style("stroke", "lightgray");
                 });
         },
 
@@ -76,11 +68,11 @@ function(
                             return d.layout.screen_width;
                         })
                         .attr("y", function(d) {
-                            return d.layout.screen_height - 2.5;
+                            return self.getHeight() / 2.0 - 2.5;
                         })
-                        .attr("height", 5)
-                        .style("fill", "blue")
-                        .style("stroke", "blue");
+                        .attr("height", 5.0)
+                        .style("fill", "gray")
+                        .style("stroke", "gray");
                 });
         },
 
