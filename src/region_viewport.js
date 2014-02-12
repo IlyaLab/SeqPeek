@@ -20,10 +20,10 @@ function (
             return _.last(this.region_data).end;
         },
 
-        _getVisibleCoordinates: function(param) {
-            var viewport_x = this.viewport_pos.x,
-                min_x = d3.max([viewport_x, 0]),
-                max_x = d3.min([viewport_x + self.width, self.width]);
+        _getVisibleCoordinates: function() {
+            var start_x = -this.viewport_pos.x,
+                min_x = d3.max([start_x, 0]),
+                max_x = d3.min([start_x + self.width, self.width]);
 
             var start = this._getCoordinateFromScaleLocation(min_x);
             var end = this._getCoordinateFromScaleLocation(max_x);
