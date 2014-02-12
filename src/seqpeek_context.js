@@ -22,23 +22,48 @@ function(
         },
 
         init: function() {
+            this.data = {};
+
             this.vis = {
                 viewport_pos: [0, 0],
                 viewport_scale: [1, 1]
             };
         },
 
+        initDiv: function(target_div) {
+            var self = this;
+            this.init();
+
+            target_div.innerHTML = "";
+
+            this.vis.root = d3.select(target_div)
+                .append("svg")
+                .style("pointer-events", "none");
+
+            this.set_svg_size = _.once(function() {
+                self.vis.root
+                    .attr("width", self.vis.size_info.width)
+                    .attr("height", self.vis.size_info.height);
+            });
+        },
+
+        initSVG: function(target_svg) {
+            this.init();
+
+            this.vis.root = target_svg;
+
+            this.set_svg_size = function() {};
+        },
+
         draw: function() {
             var self = this;
 
-            this.config.target_el.innerHTML = "";
+            this.vis.size_info = this._getVisualizationSize();
+            this.vis.viewport_size = [this.config.dimensions.width, this.vis.size_info.height];
 
-
-            var size_info = this._getVisualizationSize();
-
-            this.vis.size_info = size_info;
-
-            this.vis.viewport_size = [this.config.dimensions.width, size_info.height];
+            // Set the width and height attributes of the SVG element, if the createIntoDiv function
+            // was used to create this object.
+            this.set_svg_size();
 
             this.vis.zoom = d3.behavior.zoom()
                 .translate(this.vis.viewport_pos)
@@ -46,13 +71,6 @@ function(
                 .on("zoom", function() {
                     _.bind(self._zoomEventHandler, self, {}, true)();
                 });
-
-            this.vis.root = d3.select(this.config.target_el)
-                .append("svg")
-                .attr("id", this.config.guid)
-                .attr("width", size_info.width)
-                .attr("height", size_info.height)
-                .style("pointer-events", "none");
 
             // Area for graphical elements with clipping
             this.vis.data_area = this.vis.root
@@ -95,7 +113,7 @@ function(
                     return {
                         width: self.vis.viewport_size[0],
                         height: self.vis.viewport_size[1]
-                    }
+                    };
                 },
                 getViewportPosition: function() {
                     var viewport_pos = self.region_layout.getViewportPosition();
@@ -103,7 +121,7 @@ function(
                     return {
                         x: viewport_pos.x,
                         y: viewport_pos.y
-                    }
+                    };
                 },
                 getVisibleCoordinates: function() {
                     return self.region_layout._getVisibleCoordinates(-self.vis.viewport_pos[0]);
@@ -169,7 +187,6 @@ function(
         },
 
         render: function() {
-
             this.track_g = this.vis.data_area
                 .append("g")
                 .attr("class", "seqpeek-track");
@@ -180,17 +197,23 @@ function(
 
     return {
         createIntoDiv: function(target_el) {
-            var obj = Object.create(SeqPeekContextPrototype, {}),
-                guid = 'C' + vq.utils.VisUtils.guid(); // div id must start with letter
-
-            obj.data = {};
+            var obj = Object.create(SeqPeekContextPrototype, {});
 
             obj.config = {
-                target_el: target_el,
-                guid: guid
+                target_el: target_el
             };
 
-            obj.init();
+            obj.initDiv(target_el);
+
+            return obj;
+        },
+
+        createIntoSVG: function(target_svg) {
+            var obj = Object.create(SeqPeekContextPrototype, {});
+
+            obj.config = { };
+
+            obj.initSVG(target_svg);
 
             return obj;
         }
