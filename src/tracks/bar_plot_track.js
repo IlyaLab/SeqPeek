@@ -57,7 +57,7 @@ function(
 
                 _.each(type_data.render_data.array, function(bar_data) {
                     bar_rendering_data.push(_.extend(bar_data, {
-                        screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data.type) + viewport_x - self.config.bar_width / 2.0
+                        screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x - self.config.bar_width / 2.0
                     }));
                 });
             }, {});
@@ -79,7 +79,7 @@ function(
                 DataAdapters.apply_to_variant_types([d.data], function(type_data, memo, location_data) {
                     var coordinate = location_data.coordinate,
                         stem_start_x = region.layout.get_screen_location_for_coordinate(coordinate, ctx),
-                        stem_end_x = variant_layout.getScreenLocationForVariant(coordinate, type_data.type) + viewport_x;
+                        stem_end_x = variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x;
 
                     stem_rendering_data.push({
                         sx: stem_start_x,
