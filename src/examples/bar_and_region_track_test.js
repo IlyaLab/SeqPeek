@@ -22,7 +22,7 @@ function (
     VariantLayoutFactory,
     BarPlotTrackFactory,
     RegionTrackFactory
-) {
+    ) {
     var generate_region = function(transcript, type, start, end) {
         return {
             type: type,
@@ -94,7 +94,7 @@ function (
             .variant_type_field('variant_type')
             .variant_width(5.0)
             .regions(region_data)
-            .process();
+            .processFlatArray();
 
         var track_data = DataAdapters.group_by_location(data_points, 'variant_type', 'coordinate');
         DataAdapters.apply_statistics(track_data, 'phenotype');
@@ -154,7 +154,8 @@ function (
         // Set up rendering context for each track //
         /////////////////////////////////////////////
         var bar_plot_context = SeqPeekSVGContextFactory.createIntoSVG(bar_plot_track_svg);
-        var region_scale_ctx = SeqPeekSVGContextFactory.createIntoSVG(region_track_svg);
+        var region_scale_ctx = SeqPeekSVGContextFactory.createIntoSVG(region_track_svg)
+            .track(region_track);
 
         var scroll_handler = function(event) {
             common_viewport.setViewportPosition({
@@ -186,7 +187,6 @@ function (
         region_scale_ctx
             .width(1300)
             .scroll_handler(scroll_handler)
-            .track(region_track)
             .viewport(common_viewport)
             .draw();
     };
