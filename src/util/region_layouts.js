@@ -1,9 +1,9 @@
 define   (
 [
-
+    'd3'
 ],
 function (
-
+    d3
 ) {
     var _basic_layout_prototype = {
         getMetadata: function() {
