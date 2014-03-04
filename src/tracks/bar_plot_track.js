@@ -19,17 +19,20 @@ function(
             return this.dimensions.height;
         },
 
-        _applyStackedBarRenderData: function(data, data_info) {
+        _applyStackedBarRenderData: function(data) {
             var self = this,
+                scaling_function = ScalingFunctions.getScalingFunctionByType(this.config.scaling_type),
+                scaling_parameters = this.config.scaling_parameters,
+                category_totals = scaling_parameters[0],
                 render_info = {
-                    min_height: 10.0,
-                    max_height: 120.0,
-                    pixels_per_sample: 200,
+                    min_height: scaling_parameters[1],
+                    max_height: scaling_parameters[2],
+                    pixels_per_sample: scaling_parameters[3],
                     category_colors: self.config.color_scheme
                 };
 
             DataAdapters.apply_to_variant_types(data, function(type_data, memo) {
-                type_data.render_data = ScalingFunctions.createNormalizedLinearBars(type_data, type_data.statistics.by_category, render_info);
+                type_data.render_data = scaling_function(type_data.statistics.by_category, {}, category_totals, render_info);
             });
         },
 
@@ -50,13 +53,17 @@ function(
                 ctx = this._getRenderingContext(),
                 variant_layout = this.getVariantLayout(),
                 viewport_x = ctx.getViewportPosition().x,
-                bar_rendering_data = [];
+                bar_rendering_data = [],
+                bar_base_y = this.dimensions.height - this.config.stem_height;
 
             DataAdapters.apply_to_variant_types(this.visible_data, function(type_data, memo, data_by_location)  {
-                var coordinate = data_by_location.coordinate;
+                var coordinate = data_by_location.coordinate,
+                    current_y = bar_base_y;
 
                 _.each(type_data.render_data.array, function(bar_data) {
+                    current_y = bar_base_y - bar_data.height;
                     bar_rendering_data.push(_.extend(bar_data, {
+                        y: current_y,
                         screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x - self.config.bar_width / 2.0
                     }));
                 });
@@ -102,7 +109,6 @@ function(
         // Data API //
         //////////////
         data: function(data, data_key) {
-            this._applyStackedBarRenderData(data);
             this.location_data = data;
 
             return this;
@@ -142,6 +148,17 @@ function(
 
         variant_layout: function(layout_object) {
             this.config.variant_layout = layout_object;
+
+            return this;
+        },
+
+        //////////////
+        // Plot API //
+        //////////////
+        scaling: function() {
+            this.config.scaling_type = arguments[0];
+            this.config.category_sizes = arguments[1];
+            this.config.scaling_parameters = _.rest(arguments);
 
             return this;
         },
@@ -216,6 +233,8 @@ function(
         // Rendering API //
         ///////////////////
         draw: function() {
+            this._applyStackedBarRenderData(this.location_data);
+
             this.render();
         },
 
