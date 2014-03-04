@@ -115,9 +115,13 @@ function (
             .bar_width(5.0)
             .stem_height(30)
             .height(150)
-            .scaling('linnorm', {'true': 10, 'false': 20}, 10, 200, 200);
-
-        DataAdapters.apply_track_statistics(test_track, 'variants');
+            .category_totals({'true': 10, 'false': 20})
+            .scaling({
+                type: 'log2nabs',
+                min_height: 10,
+                max_height: 200,
+                scaling_factor: 200
+            });
 
         var region_track = RegionTrackFactory
             .create()
