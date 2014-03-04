@@ -61,7 +61,7 @@ function(
         }));
     };
 
-    var _createLog2Bars = function(samples_by_categories, track_statistics, render_info) {
+    var _createLog2Bars = function(samples_by_categories, track_statistics, category_totals, render_info) {
         var category_max_height = render_info.max_height / _.keys(samples_by_categories).length;
 
         var log_scale = d3.scale
@@ -76,7 +76,7 @@ function(
             if (number > 0) {
                 memo.array.push({
                     height: height,
-                    color: render_info.category_colors(group_name),
+                    color: render_info.category_colors[group_name],
                     y: memo.current_y
                 });
 
@@ -95,7 +95,7 @@ function(
     var _createNormalizedLinearBars = function(samples_by_categories, track_statistics, category_totals, render_info) {
         var min_height = render_info.min_height,
             max_height = render_info.max_height,
-            pixels_per_sample = render_info.pixels_per_sample;
+            pixels_per_sample = render_info.scaling_factor;
 
         var bars = _.reduce(_.keys(samples_by_categories), function(memo, group_name) {
             if (_.has(samples_by_categories, group_name)) {
