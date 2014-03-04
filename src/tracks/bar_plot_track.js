@@ -21,18 +21,14 @@ function(
 
         _applyStackedBarRenderData: function(data) {
             var self = this,
-                scaling_function = ScalingFunctions.getScalingFunctionByType(this.config.scaling_type),
-                scaling_parameters = this.config.scaling_parameters,
-                category_totals = scaling_parameters[0],
-                render_info = {
-                    min_height: scaling_parameters[1],
-                    max_height: scaling_parameters[2],
-                    pixels_per_sample: scaling_parameters[3],
+                scaling_function = ScalingFunctions.getScalingFunctionByType(this.config.scaling.type),
+                category_totals = this.config.category_totals,
+                render_info = _.extend(this.config.scaling, {
                     category_colors: self.config.color_scheme
-                };
+                });
 
             DataAdapters.apply_to_variant_types(data, function(type_data, memo) {
-                type_data.render_data = scaling_function(type_data.statistics.by_category, {}, category_totals, render_info);
+                type_data.render_data = scaling_function(type_data.statistics.by_category, self.statistics, category_totals, render_info);
             });
         },
 
@@ -110,6 +106,7 @@ function(
         //////////////
         data: function(data, data_key) {
             this.location_data = data;
+            DataAdapters.apply_track_statistics(this, 'location_data');
 
             return this;
         },
@@ -155,10 +152,14 @@ function(
         //////////////
         // Plot API //
         //////////////
-        scaling: function() {
-            this.config.scaling_type = arguments[0];
-            this.config.category_sizes = arguments[1];
-            this.config.scaling_parameters = _.rest(arguments);
+        category_totals: function() {
+            this.config.category_totals = arguments[0];
+
+            return this;
+        },
+
+        scaling: function(config) {
+            this.config.scaling = config;
 
             return this;
         },
