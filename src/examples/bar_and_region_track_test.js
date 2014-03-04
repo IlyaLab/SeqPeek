@@ -114,7 +114,8 @@ function (
             .variant_layout(variant_layout)
             .bar_width(5.0)
             .stem_height(30)
-            .height(150);
+            .height(150)
+            .scaling('linnorm', {'true': 10, 'false': 20}, 10, 200, 200);
 
         DataAdapters.apply_track_statistics(test_track, 'variants');
 
