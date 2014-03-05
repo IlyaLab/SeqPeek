@@ -9,7 +9,8 @@ define   (
     'seqpeek_svg_context',
     'variant_layout',
     '../tracks/bar_plot_track',
-    '../tracks/region_scale_track'
+    '../tracks/region_scale_track',
+    '../tracks/horizontal_tick_track'
 ],
 function (
     TestUtils,
@@ -21,8 +22,9 @@ function (
     SeqPeekSVGContextFactory,
     VariantLayoutFactory,
     BarPlotTrackFactory,
-    RegionTrackFactory
-    ) {
+    RegionTrackFactory,
+    TickTrackFactory
+) {
     var generate_region = function(transcript, type, start, end) {
         return {
             type: type,
@@ -34,6 +36,7 @@ function (
     var test_function = function(target_el) {
         var data_points = TestUtils.generate_test_data([
             // Coding
+            [9, 900, 'AB', 'false'],
             [10, 1000, 'AB', 'false'],
             [10, 1000, 'AB', 'true'],
 
@@ -128,6 +131,13 @@ function (
             .height(20)
             .data(region_data);
 
+        var tick_track = TickTrackFactory
+            .create()
+            .height(25)
+            .tick_height(10)
+            .tick_text_y(22)
+            .data(region_data);
+
         //////////////
         // Viewport //
         //////////////
@@ -143,7 +153,7 @@ function (
         var vis_svg = d3.select(target_el)
             .append("svg")
             .attr("width", 1300)
-            .attr("height", 170)
+            .attr("height", 195)
             .style("pointer-events", "none");
 
         var bar_plot_track_svg = vis_svg
@@ -155,12 +165,19 @@ function (
             .attr("transform", "translate(0,150)")
             .style("pointer-events", "none");
 
+        var tick_track_svg = vis_svg
+            .append("g")
+            .attr("transform", "translate(0,170)")
+            .style("pointer-events", "none");
+
         /////////////////////////////////////////////
         // Set up rendering context for each track //
         /////////////////////////////////////////////
-        var bar_plot_context = SeqPeekSVGContextFactory.createIntoSVG(bar_plot_track_svg);
-        var region_scale_ctx = SeqPeekSVGContextFactory.createIntoSVG(region_track_svg)
-            .track(region_track);
+        var bar_plot_context = SeqPeekSVGContextFactory.createIntoSVG(bar_plot_track_svg),
+            region_scale_ctx = SeqPeekSVGContextFactory.createIntoSVG(region_track_svg)
+                .track(region_track),
+            tick_ctx = SeqPeekSVGContextFactory.createIntoSVG(tick_track_svg)
+                .track(tick_track);
 
         var scroll_handler = function(event) {
             common_viewport.setViewportPosition({
@@ -176,6 +193,9 @@ function (
 
             // Scroll the region scale track context
             _.bind(region_scale_ctx._updateViewportTranslation, region_scale_ctx)();
+
+            // Scroll the tick track context
+            _.bind(tick_ctx._updateViewportTranslation, tick_ctx)();
         };
 
         bar_plot_context
@@ -190,6 +210,12 @@ function (
         bar_plot_context.draw();
 
         region_scale_ctx
+            .width(1300)
+            .scroll_handler(scroll_handler)
+            .viewport(common_viewport)
+            .draw();
+
+        tick_ctx
             .width(1300)
             .scroll_handler(scroll_handler)
             .viewport(common_viewport)
