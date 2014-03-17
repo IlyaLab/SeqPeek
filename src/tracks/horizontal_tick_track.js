@@ -30,7 +30,8 @@ function(
                 })
                 .each(function(region) {
                     var id = self._getRegionID(region),
-                        ticks = region.layout.coordinate_scale.ticks(5),
+                        num_ticks = Math.floor(region.layout.screen_width / 100),
+                        ticks = region.layout.coordinate_scale.ticks(num_ticks),
                         tick_data = _.map(ticks, function(tick_coordinate) {
                             return {
                                 tick_text: tick_coordinate,
