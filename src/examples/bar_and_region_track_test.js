@@ -97,7 +97,7 @@ function (
             .variant_type_field('variant_type')
             .variant_width(5.0)
             .regions(region_data)
-            .processFlatArray();
+            .processFlatArray('coordinate');
 
         var track_data = DataAdapters.group_by_location(data_points, 'variant_type', 'coordinate');
         DataAdapters.apply_statistics(track_data, 'phenotype');
