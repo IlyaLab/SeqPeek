@@ -54,14 +54,13 @@ function (
             return this;
         },
 
-        processFlatArray: function() {
-            this.data_array = _.sortBy(this.data_array, function(d) {
-                return d.coordinate;
-            });
+        processFlatArray: function(location_info) {
+            var location_accessor = DataAdapters.make_accessor(location_info);
+
+            this.data_array = _.sortBy(this.data_array, location_accessor);
 
             this.internal_type_accessor = DataAdapters.make_accessor('type');
             this.grouped_data = DataAdapters.group_by_location(this.data_array, this.variant_type_accessor, this.location_accessor);
-            console.log(this.grouped_data);
 
             return this;
         },
@@ -81,24 +80,25 @@ function (
 
         },
 
-        doLayoutForViewport: function(visible_coordinates) {
+        doLayoutForViewport: function(visible_coordinates, location_info) {
             var self = this,
                 start = visible_coordinates[0],
                 stop = visible_coordinates[1],
                 current_location = 0.0,
-                type_accessor = this.internal_type_accessor;
+                type_accessor = this.internal_type_accessor,
+                location_accessor = (location_info !== undefined) ? DataAdapters.make_accessor(location_info) : self.location_accessor;
 
             var visible_data_points = _.chain(this.grouped_data)
                 .filter(function(data_point) {
-                    var coordinate = self.location_accessor(data_point);
+                    var coordinate = location_accessor(data_point);
 
                     return start <= coordinate && coordinate <= stop;
                 })
                 .value();
 
             this.layout_map = {};
-            GeneRegionUtils.iterateDataWithRegions(this.region_data, visible_data_points, this.location_accessor, function(d) {
-                var location = self.location_accessor(d.data),
+            GeneRegionUtils.iterateDataWithRegions(this.region_data, visible_data_points, location_accessor, function(d) {
+                var location = location_accessor(d.data),
                     coordinate_center = d.region.layout.get_location_in_local_scale(location),
                     num_types = d.data.types.length,
                     group_width = num_types * self.variant_width_value,
