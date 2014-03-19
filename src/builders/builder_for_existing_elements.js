@@ -117,7 +117,6 @@ function (
 
         _initViewport: function() {
             var self = this,
-                viewport_config = _.extend(DEFAULT_VIEWPORT_CONFIG, this.config.viewport),
                 region_data = self.region_data,
                 region_metadata = self.region_metadata;
 
@@ -136,16 +135,14 @@ function (
             this.variant_layout = VariantLayoutFactory.create({});
 
             _.each(this.bar_plot_track_data, function(entry) {
-                var track_data = entry.data;
-
-                self.variant_layout.add_track_data(track_data);
+                self.variant_layout.add_track_data(entry.data_array);
             });
 
             this.variant_layout
                 .location_field(this.config.variant_data_location_field)
                 .variant_type_field(this.config.variant_data_type_field)
                 .regions(this.region_data)
-                .processFlatArray(this.config.variant_data_location_field);
+                .processFlatArray('coordinate');
 
             _.each(config, function(value, function_key) {
                 self.variant_layout[function_key](value);
@@ -308,6 +305,7 @@ function (
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
             this.bar_plot_track_data.push({
+                data_array: variant_array,
                 data: track_data,
                 element: track_container_element
             });
