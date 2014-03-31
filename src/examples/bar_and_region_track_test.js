@@ -78,21 +78,26 @@ function (
         var vis_svg = d3.select(target_el)
             .append("svg")
             .attr("width", 1300)
-            .attr("height", 195)
+            .attr("height", 150 + 150 + 20)
             .style("pointer-events", "none");
 
         var bar_plot_track_svg = vis_svg
             .append("g")
             .style("pointer-events", "none");
 
+        var lollipop_track_svg = vis_svg
+            .append("g")
+            .attr("transform", "translate(0,100)")
+            .style("pointer-events", "none");
+
         var region_track_svg = vis_svg
             .append("g")
-            .attr("transform", "translate(0,150)")
+            .attr("transform", "translate(0,270)")
             .style("pointer-events", "none");
 
         var tick_track_svg = vis_svg
             .append("g")
-            .attr("transform", "translate(0,170)")
+            .attr("transform", "translate(0,290)")
             .style("pointer-events", "none");
 
         //////////////////
@@ -105,6 +110,15 @@ function (
                 height: 150,
                 stem_height: 30
             },
+            sample_plot_tracks: {
+                height: 150,
+                stem_height: 30,
+                color_scheme: {
+                    'AB': 'blue',
+                    'XY': 'green',
+                    'CD': 'red'
+                }
+            },
             region_layout: {
                 intron_width: 50
             },
@@ -112,10 +126,11 @@ function (
                 variant_width: 5.0
             },
             variant_data_location_field: 'coordinate',
-            variant_data_type_field: 'mutation_id'
+            variant_data_type_field: 'variant_type'
         });
 
         seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg);
+        seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg);
         seqpeek.addRegionScaleTrackToElement(region_track_svg);
         seqpeek.addTickTrackToElement(tick_track_svg);
         seqpeek.draw();
