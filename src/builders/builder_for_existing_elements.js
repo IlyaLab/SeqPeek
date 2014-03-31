@@ -29,6 +29,7 @@ function (
 ) {
     var VERTICAL_PADDING = 10,
         BAR_PLOT_TRACK_MAX_HEIGHT = 100,
+        SAMPLE_PLOT_TRACK_MAX_HEIGHT = 100,
         TICK_TRACK_HEIGHT = 25,
         REGION_TRACK_HEIGHT = 10,
         VIEWPORT_WIDTH = 1000;
@@ -47,6 +48,15 @@ function (
             scaling_factor: 200
         },
         category_totals: {}
+    };
+
+    var DEFAULT_SAMPLE_PLOT_TRACK_CONFIG = {
+        color_scheme: {
+            'all': 'gray'
+        },
+        glyph_width: 5.0,
+        height: SAMPLE_PLOT_TRACK_MAX_HEIGHT,
+        stem_height: 30.0
     };
 
     var DEFAULT_REGION_LAYOUT_CONFIG = {
@@ -80,9 +90,7 @@ function (
             // Internal variables
             this.tracks_array = [];
 
-            this.bar_plot_track_data = [];
-            this.bar_plot_track_instances = [];
-            this.bar_plot_SVG_contexts = [];
+            this.variant_layout_data = [];
 
             this.region_data = null;
             this.region_metadata = null;
@@ -130,7 +138,7 @@ function (
 
             this.variant_layout = VariantLayoutFactory.create({});
 
-            _.each(this.bar_plot_track_data, function(entry) {
+            _.each(this.variant_layout_data, function(entry) {
                 self.variant_layout.add_track_data(entry.data_array);
             });
 
@@ -145,45 +153,49 @@ function (
             });
         },
 
-        _initBarPlotTracks: function() {
+        _initBarPlotTrack: function(track_info) {
             var self = this,
-                config = _.extend(DEFAULT_BAR_PLOT_TRACK_CONFIG, this.config.bar_plot_tracks);
+                config = _.extend(DEFAULT_BAR_PLOT_TRACK_CONFIG, this.config.bar_plot_tracks),
+                track_data = track_info.data,
+                track_instance = BarPlotTrackFactory
+                    .create()
+                    .data(track_data, function(d) {return d;})
+                    .regions(self.region_data, 'coordinate')
+                    .variant_layout(self.variant_layout);
 
-            _.each(this.bar_plot_track_data, function(entry) {
-                var track_data = entry.data,
-                    track_instance = entry.factory
-                        .create()
-                        .data(track_data, function(d) {return d;})
-                        .regions(self.region_data, 'coordinate')
-                        .variant_layout(self.variant_layout);
-
-                _.each(config, function(value, function_key) {
-                    track_instance[function_key](value);
-                });
-
-                self.bar_plot_track_instances.push(track_instance);
+            _.each(config, function(value, function_key) {
+                track_instance[function_key](value);
             });
+
+            return track_instance;
         },
 
-        _initBarPlotContexts: function() {
-            var self = this;
+        _initSamplePlotTrack: function(track_info) {
+            var self = this,
+                config = _.extend(DEFAULT_SAMPLE_PLOT_TRACK_CONFIG, this.config.sample_plot_tracks),
+                track_data = track_info.data,
+                track_instance = SamplePlotTrackFactory
+                    .create()
+                    .data(track_data, function(d) {return d;})
+                    .regions(self.region_data, 'coordinate')
+                    .variant_layout(self.variant_layout);
 
-            _.chain(_.zip(
-                this.bar_plot_track_instances,
-                this.bar_plot_track_data
-            ))
-            .each(function(bar_plot_info) {
-                var track_instance = bar_plot_info[0],
-                    element = bar_plot_info[1].element;
-
-                var context = SeqPeekSVGContextFactory.createIntoSVG(element)
-                    .track(track_instance)
-                    .width(self.config.viewport.width)
-                    .scroll_handler(self.scroll_handler)
-                    .viewport(self.viewport);
-
-                self.bar_plot_SVG_contexts.push(context);
+            _.each(config, function(value, function_key) {
+                track_instance[function_key](value);
             });
+
+            return track_instance;
+        },
+
+        _initSampleBasedTrackContext: function(track_instance, track_info) {
+            var self = this,
+                element = track_info.element;
+
+            return SeqPeekSVGContextFactory.createIntoSVG(element)
+                .track(track_instance)
+                .width(self.config.viewport.width)
+                .scroll_handler(self.scroll_handler)
+                .viewport(self.viewport);
         },
 
         _initRegionScaleTrack: function() {
@@ -203,36 +215,43 @@ function (
             var self = this,
                 element = track_info.element;
 
-            var context = SeqPeekSVGContextFactory.createIntoSVG(element)
+            return SeqPeekSVGContextFactory.createIntoSVG(element)
                 .track(track_instance)
                 .width(self.config.viewport.width)
                 .scroll_handler(self.scroll_handler)
                 .viewport(self.viewport);
-
-            return context;
         },
 
         _initTrackContexts: function() {
             var self = this;
 
             _.each(this.tracks_array, function(track_info) {
-                if (track_info.type == 'region_scale') {
-                    var track_instance = self._initRegionScaleTrack(),
-                        context = self._initRegionDataDependentContext(track_instance, track_info);
+                var track_instance,
+                    context;
 
-                    track_info.track_instance = track_instance;
-                    track_info.context = context;
+                if (track_info.type == 'bar_plot') {
+                    track_instance = self._initBarPlotTrack(track_info);
+                    context = self._initSampleBasedTrackContext(track_instance, track_info);
+                }
+                else if (track_info.type == 'sample_plot') {
+                    track_instance = self._initSamplePlotTrack(track_info);
+                    context = self._initSampleBasedTrackContext(track_instance, track_info);
+                }
+                else if (track_info.type == 'region_scale') {
+                    track_instance = self._initRegionScaleTrack();
+                    context = self._initRegionDataDependentContext(track_instance, track_info);
                 }
                 else if (track_info.type == 'tick') {
-                    var track_instance = self._initTickTrack(),
-                        context = self._initRegionDataDependentContext(track_instance, track_info);
-
-                    track_info.track_instance = track_instance;
-                    track_info.context = context;
+                    track_instance = self._initTickTrack();
+                    context = self._initRegionDataDependentContext(track_instance, track_info);
                 }
                 else {
                     console.log("Skipping " + track_info.type);
+                    return;
                 }
+
+                track_info.track_instance = track_instance;
+                track_info.context = context;
             });
         },
 
@@ -262,11 +281,6 @@ function (
                 var visible_coordinates = self.viewport._getVisibleCoordinates();
                 self.variant_layout.doLayoutForViewport(visible_coordinates, 'coordinate');
 
-                // Update viewport for each bar plot context
-                _.each(self.bar_plot_SVG_contexts, function(context) {
-                    _.bind(context._updateViewportTranslation, context)();
-                });
-
                 _.each(self.tracks_array, function(track_info) {
                     var context = track_info.context;
                     _.bind(context._updateViewportTranslation, context)();
@@ -284,11 +298,14 @@ function (
             var track_data = DataAdapters.group_by_location(variant_array, type_field_name, location_field_name);
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
-            this.bar_plot_track_data.push({
-                data_array: variant_array,
+            this.variant_layout_data.push({
+                data_array: variant_array
+            });
+
+            this.tracks_array.push({
+                type: 'bar_plot',
                 data: track_data,
-                element: track_container_element,
-                factory: BarPlotTrackFactory
+                element: track_container_element
             });
         },
 
@@ -299,11 +316,14 @@ function (
             var track_data = DataAdapters.group_by_location(variant_array, type_field_name, location_field_name);
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
-            this.bar_plot_track_data.push({
-                data_array: variant_array,
+            this.variant_layout_data.push({
+                data_array: variant_array
+            });
+
+            this.tracks_array.push({
+                type: 'sample_plot',
                 data: track_data,
-                element: track_container_element,
-                factory: SamplePlotTrackFactory
+                element: track_container_element
             });
         },
 
@@ -326,20 +346,12 @@ function (
             this._initVariantLayout();
             this._initViewport();
 
-            this._initBarPlotTracks();
-
             this._initScrollHandler();
-
-            this._initBarPlotContexts();
 
             this._initTrackContexts();
 
-            var initial_viewport = this.bar_plot_SVG_contexts[0].getCurrentViewport();
+            var initial_viewport = this.tracks_array[0].context.getCurrentViewport();
             this.variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), 'coordinate');
-
-            _.each(this.bar_plot_SVG_contexts, function(context) {
-                context.draw();
-            });
 
             _.each(this.tracks_array, function(track_info) {
                 track_info.context.draw();
