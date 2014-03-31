@@ -4,18 +4,14 @@ define   (
     'underscore',
 
     '../util/data_adapters',
-    '../util/gene_region_utils',
-    '../seqpeek_scaling'
+    '../util/gene_region_utils'
 ],
 function(
     d3,
     _,
     DataAdapters,
-    GeneRegionUtils,
-    ScalingFunctions
+    GeneRegionUtils
 ) {
-    var SAMPLE_GLYPH_RADIUS = 2.5;
-
     var SamplePlotTrackPrototype = {
         getHeight: function() {
             return this.dimensions.height;
@@ -23,22 +19,18 @@ function(
 
         _applySampleBasedRenderData: function(data) {
             var self = this,
-                scaling_function = ScalingFunctions.getScalingFunctionByType(this.config.scaling.type),
-                category_totals = this.config.category_totals,
-                render_info = _.extend(this.config.scaling, {
-                    category_colors: self.config.color_scheme
-                });
+                radius = this.config.glyph_width / 2.0;
 
             DataAdapters.apply_to_variant_types(data, function(type_data, memo) {
                 var render_data = {
-                    array: []
-                };
+                        array: []
+                    },
+                    color = self.config.color_scheme[type_data.type];
 
                 _.each(type_data.data, function(data_point, index) {
                     render_data.array.push(_.extend(data_point, {
-                        color: 'blue',
-                        r: SAMPLE_GLYPH_RADIUS,
-                        height: SAMPLE_GLYPH_RADIUS
+                        color: color,
+                        r: radius
                     }));
                 });
 
@@ -64,14 +56,15 @@ function(
                 variant_layout = this.getVariantLayout(),
                 viewport_x = ctx.getViewportPosition().x,
                 sample_rendering_data = [],
-                sample_base_y = this.dimensions.height - this.config.stem_height;
+                sample_base_y = this.dimensions.height - this.config.stem_height,
+                radius = this.config.glyph_width / 2.0;
 
             DataAdapters.apply_to_variant_types(this.visible_data, function(type_data, memo, data_by_location)  {
                 var coordinate = data_by_location.coordinate,
-                    current_y = sample_base_y + SAMPLE_GLYPH_RADIUS;
+                    current_y = sample_base_y + radius;
 
                 _.each(type_data.render_data.array, function(sample_data_point) {
-                    current_y = current_y - 2.0 * SAMPLE_GLYPH_RADIUS;
+                    current_y = current_y - self.config.glyph_width;
                     sample_rendering_data.push(_.extend(sample_data_point, {
                         y: current_y,
                         screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x
@@ -145,8 +138,8 @@ function(
             return this;
         },
 
-        bar_width: function(value) {
-            this.config.bar_width = value;
+        glyph_width: function(value) {
+            this.config.glyph_width = value;
 
             return this;
         },
