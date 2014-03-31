@@ -109,7 +109,7 @@ function (
                 current_location = _.max(
                     [
                         current_location + group_width / 2.0,
-                        coordinate_center - group_width / 2.0
+                        coordinate_center
                     ]);
 
                 _.chain(d.data.types)
