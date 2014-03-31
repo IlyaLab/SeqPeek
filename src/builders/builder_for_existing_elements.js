@@ -9,6 +9,7 @@ define   (
     '../seqpeek_svg_context',
     '../variant_layout',
     '../tracks/bar_plot_track',
+    '../tracks/sample_plot_track',
     '../tracks/region_scale_track',
     '../tracks/horizontal_tick_track'
 ],
@@ -22,6 +23,7 @@ function (
     SeqPeekSVGContextFactory,
     VariantLayoutFactory,
     BarPlotTrackFactory,
+    SamplePlotTrackFactory,
     RegionTrackFactory,
     TickTrackFactory
 ) {
@@ -76,17 +78,11 @@ function (
             this.config = config;
 
             // Internal variables
+            this.tracks_array = [];
+
             this.bar_plot_track_data = [];
             this.bar_plot_track_instances = [];
             this.bar_plot_SVG_contexts = [];
-
-            this.region_scale_track_data = [];
-            this.region_scale_track_instances = [];
-            this.region_scale_SVG_contexts = [];
-
-            this.tick_track_data = [];
-            this.tick_track_instances = [];
-            this.tick_SVG_contexts = [];
 
             this.region_data = null;
             this.region_metadata = null;
@@ -155,7 +151,7 @@ function (
 
             _.each(this.bar_plot_track_data, function(entry) {
                 var track_data = entry.data,
-                    track_instance = BarPlotTrackFactory
+                    track_instance = entry.factory
                         .create()
                         .data(track_data, function(d) {return d;})
                         .regions(self.region_data, 'coordinate')
@@ -190,80 +186,69 @@ function (
             });
         },
 
-        _initRegionScaleTracks: function() {
+        _initRegionScaleTrack: function() {
+            var config = _.extend(DEFAULT_REGION_TRACK_CONFIG, this.config.region_track),
+                track_instance = RegionTrackFactory
+                    .create()
+                    .data(this.region_data);
+
+            _.each(config, function(value, function_key) {
+                track_instance[function_key](value);
+            });
+
+            return track_instance;
+        },
+
+        _initRegionDataDependentContext: function(track_instance, track_info) {
             var self = this,
-                config = _.extend(DEFAULT_REGION_TRACK_CONFIG, this.config.region_track);
+                element = track_info.element;
 
-            _.each(this.region_scale_track_data, function(entry) {
-                var track_instance = RegionTrackFactory
-                        .create()
-                        .data(self.region_data);
+            var context = SeqPeekSVGContextFactory.createIntoSVG(element)
+                .track(track_instance)
+                .width(self.config.viewport.width)
+                .scroll_handler(self.scroll_handler)
+                .viewport(self.viewport);
 
-                _.each(config, function(value, function_key) {
-                    track_instance[function_key](value);
-                });
+            return context;
+        },
 
-                self.region_scale_track_instances.push(track_instance);
+        _initTrackContexts: function() {
+            var self = this;
+
+            _.each(this.tracks_array, function(track_info) {
+                if (track_info.type == 'region_scale') {
+                    var track_instance = self._initRegionScaleTrack(),
+                        context = self._initRegionDataDependentContext(track_instance, track_info);
+
+                    track_info.track_instance = track_instance;
+                    track_info.context = context;
+                }
+                else if (track_info.type == 'tick') {
+                    var track_instance = self._initTickTrack(),
+                        context = self._initRegionDataDependentContext(track_instance, track_info);
+
+                    track_info.track_instance = track_instance;
+                    track_info.context = context;
+                }
+                else {
+                    console.log("Skipping " + track_info.type);
+                }
             });
         },
 
-        _initRegionScaleContexts: function() {
-            var self = this;
-
-            _.chain(_.zip(
-                    this.region_scale_track_instances,
-                    this.region_scale_track_data
-                ))
-                .each(function(track_info) {
-                    var track_instance = track_info[0],
-                        element = track_info[1].element;
-
-                    var context = SeqPeekSVGContextFactory.createIntoSVG(element)
-                        .track(track_instance)
-                        .width(self.config.viewport.width)
-                        .scroll_handler(self.scroll_handler)
-                        .viewport(self.viewport);
-
-                    self.region_scale_SVG_contexts.push(context);
-                });
-        },
-
-        _initTickTracks: function() {
+        _initTickTrack: function() {
             var self = this,
                 config = _.extend(DEFAULT_TICK_TRACK_CONFIG, this.config.tick_track);
 
-            _.each(this.tick_track_data, function(entry) {
-                var track_instance = TickTrackFactory
-                    .create()
-                    .data(self.region_data);
+            var track_instance = TickTrackFactory
+                .create()
+                .data(self.region_data);
 
-                _.each(config, function(value, function_key) {
-                    track_instance[function_key](value);
-                });
-
-                self.tick_track_instances.push(track_instance);
+            _.each(config, function(value, function_key) {
+                track_instance[function_key](value);
             });
-        },
 
-        _initTickTrackContexts: function() {
-            var self = this;
-
-            _.chain(_.zip(
-                    this.tick_track_instances,
-                    this.tick_track_data
-                ))
-                .each(function(track_info) {
-                    var track_instance = track_info[0],
-                        element = track_info[1].element;
-
-                    var context = SeqPeekSVGContextFactory.createIntoSVG(element)
-                        .track(track_instance)
-                        .width(self.config.viewport.width)
-                        .scroll_handler(self.scroll_handler)
-                        .viewport(self.viewport);
-
-                    self.tick_SVG_contexts.push(context);
-                });
+            return track_instance;
         },
 
         _initScrollHandler: function() {
@@ -282,13 +267,8 @@ function (
                     _.bind(context._updateViewportTranslation, context)();
                 });
 
-                // Scroll the region scale track context
-                _.each(self.region_scale_SVG_contexts, function(context) {
-                    _.bind(context._updateViewportTranslation, context)();
-                });
-
-                // Scroll the region scale track context
-                _.each(self.tick_SVG_contexts, function(context) {
+                _.each(self.tracks_array, function(track_info) {
+                    var context = track_info.context;
                     _.bind(context._updateViewportTranslation, context)();
                 });
             }
@@ -307,18 +287,36 @@ function (
             this.bar_plot_track_data.push({
                 data_array: variant_array,
                 data: track_data,
-                element: track_container_element
+                element: track_container_element,
+                factory: BarPlotTrackFactory
+            });
+        },
+
+        addSamplePlotTrackWithArrayData: function(variant_array, track_container_element) {
+            var type_field_name = this.config.variant_data_type_field,
+                location_field_name = this.config.variant_data_location_field;
+
+            var track_data = DataAdapters.group_by_location(variant_array, type_field_name, location_field_name);
+            DataAdapters.apply_statistics(track_data, function() {return 'all';});
+
+            this.bar_plot_track_data.push({
+                data_array: variant_array,
+                data: track_data,
+                element: track_container_element,
+                factory: SamplePlotTrackFactory
             });
         },
 
         addRegionScaleTrackToElement: function(track_container_element) {
-            this.region_scale_track_data.push({
+            this.tracks_array.push({
+                type: 'region_scale',
                 element: track_container_element
             });
         },
 
         addTickTrackToElement: function(track_container_element) {
-            this.tick_track_data.push({
+            this.tracks_array.push({
+                type: 'tick',
                 element: track_container_element
             });
         },
@@ -329,14 +327,12 @@ function (
             this._initViewport();
 
             this._initBarPlotTracks();
-            this._initRegionScaleTracks();
-            this._initTickTracks();
 
             this._initScrollHandler();
 
             this._initBarPlotContexts();
-            this._initRegionScaleContexts();
-            this._initTickTrackContexts();
+
+            this._initTrackContexts();
 
             var initial_viewport = this.bar_plot_SVG_contexts[0].getCurrentViewport();
             this.variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), 'coordinate');
@@ -345,12 +341,8 @@ function (
                 context.draw();
             });
 
-            _.each(this.region_scale_SVG_contexts, function(context) {
-                context.draw();
-            });
-
-            _.each(this.tick_SVG_contexts, function(context) {
-                context.draw();
+            _.each(this.tracks_array, function(track_info) {
+                track_info.context.draw();
             });
         }
     };
