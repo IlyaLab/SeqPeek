@@ -1,5 +1,6 @@
 define   (
 [
+    'vq',
     'examples/testutils',
     'examples/seqpeek_test',
     'util/data_adapters',
@@ -8,6 +9,8 @@ define   (
 
 ],
 function (
+    vq,
+
     TestUtils,
     SeqPeekTestPrototype,
     DataAdapters,
@@ -172,10 +175,13 @@ function (
         ////////////////////////////////////////
         // Create SVG elements for all tracks //
         ////////////////////////////////////////
-        var vis_svg = d3.select(target_el)
+        var container_guid = 'C' + vq.utils.VisUtils.guid(),
+            vis_svg = d3.select(target_el)
             .append("svg")
             .attr("width", 1300)
             .attr("height", 150 + 150 + 70)
+                .attr("id", container_guid)
+
             .style("pointer-events", "none");
 
         var bar_plot_track_svg = vis_svg
@@ -243,7 +249,9 @@ function (
         seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg);
         seqpeek.addRegionScaleTrackToElement(region_track_svg);
         seqpeek.addTickTrackToElement(tick_track_svg);
-        seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg);
+        seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg, {
+            guid: container_guid
+        });
         seqpeek.draw();
     };
 
