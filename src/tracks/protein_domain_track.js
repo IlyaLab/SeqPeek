@@ -92,7 +92,6 @@ function(
                 var handler = this._buildHovercardHandler();
 
                 domains_g
-                    //.selectAll(".domain")
                     .each(function() {
                         d3.select(this).on("mouseover", function(d) {
                             handler.call(this, d);
