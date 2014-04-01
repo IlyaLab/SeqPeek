@@ -156,6 +156,25 @@ function(
             return this;
         },
 
+        guid: function(value) {
+            this.config.guid = value;
+
+            return this;
+        },
+
+        hovercard_config: function(value) {
+            this.config.hovercard.config = value;
+
+            return this;
+        },
+
+        hovercard_content: function(value) {
+            this.config.hovercard.enable = true;
+            this.config.hovercard.content = value;
+
+            return this;
+        },
+
         //////////////
         // Plot API //
         //////////////
@@ -174,6 +193,15 @@ function(
         //////////////////////////////////
         // Internal rendering functions //
         //////////////////////////////////
+        _buildHovercardHandler: function() {
+            var handler_params = _.extend(this.config.hovercard.config, {
+                canvas_id: this.config.guid,
+                data_config: this.config.hovercard.content
+            });
+
+            return vq.hovercard(handler_params);
+        },
+
         _renderSampleGlyphs: function() {
             var self = this,
                 ctx = this._getRenderingContext();
@@ -200,6 +228,18 @@ function(
                 .style("fill", function(d) {
                     return d.color;
                 });
+
+            if (this.config.hovercard.enable) {
+                var handler = this._buildHovercardHandler();
+
+                ctx.svg
+                    .selectAll(".variant")
+                    .each(function() {
+                        d3.select(this).on("mouseover", function(d) {
+                            handler.call(this, d);
+                        });
+                    });
+            }
         },
 
         _renderStems: function() {
@@ -259,7 +299,11 @@ function(
     return {
         create: function(config) {
             var track = Object.create(SamplePlotTrackPrototype, {});
-            track.config = {};
+            track.config = {
+                hovercard: {
+                    enable: false
+                }
+            };
             track.render_data = {};
             return track;
         }
