@@ -225,6 +225,17 @@ function (
                     'AB': 'blue',
                     'XY': 'green',
                     'CD': 'red'
+                },
+                hovercard_content: {
+                    "coordinate": function(d) {
+                        return d.coordinate;
+                    },
+                    "type": function(d) {
+                        return d.variant_type;
+                    },
+                    "phenotype": function(d) {
+                        return d.phenotype;
+                    }
                 }
             },
             protein_domain_tracks: {
@@ -246,7 +257,9 @@ function (
         });
 
         seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg);
-        seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg);
+        seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg, {
+            guid: container_guid
+        });
         seqpeek.addRegionScaleTrackToElement(region_track_svg);
         seqpeek.addTickTrackToElement(tick_track_svg);
         seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg, {
