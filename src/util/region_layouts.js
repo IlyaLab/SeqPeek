@@ -16,9 +16,16 @@ function (
             return this;
         },
 
+        exon_width: function(value) {
+            this.options.coding_region_width = value;
+
+            return this;
+        },
+
         process: function(region_data) {
             var self = this,
-                current_loc = 0;
+                current_loc = 0,
+                width_config = this.options.coding_region_width;
 
             _.each(region_data, function(region) {
                 var start = isNaN(region.start) ? 0 : region.start,
@@ -27,7 +34,15 @@ function (
                 var width;
 
                 if (region.type == 'exon') {
-                    width = region_end - start;
+                    if (width_config === undefined) {
+                        width = region_end - start;
+                    }
+                    else if (_.isFunction(width_config)) {
+                        width = width_config(start, region_end);
+                    }
+                    else {
+                        width = width_config;
+                    }
                 }
                 else {
                     width = self.options.noncoding_region_width;
