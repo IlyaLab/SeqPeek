@@ -22,10 +22,20 @@ function (
             return this;
         },
 
+        getCoordinateFromScreenLocation: function(screen_x) {
+            return this.screen_location_to_coordinate_scale(screen_x);
+        },
+
+        getScreenLocationFromCoordinate: function(coordinate) {
+            return this.coordinate_to_screen_location_scale(coordinate);
+        },
+
         process: function(region_data) {
             var self = this,
                 current_loc = 0,
-                width_config = this.options.coding_region_width;
+                width_config = this.options.coding_region_width,
+                screen_location_to_coordinate_domain = [0],
+                screen_location_to_coordinate_range = [0];
 
             _.each(region_data, function(region) {
                 var start = isNaN(region.start) ? 0 : region.start,
@@ -66,7 +76,20 @@ function (
                 };
 
                 current_loc = current_loc + width + 1;
+
+                screen_location_to_coordinate_domain.push(current_loc);
+                screen_location_to_coordinate_range.push(region_end);
             });
+
+            this.screen_location_to_coordinate_scale = d3.scale
+                .linear()
+                .domain(screen_location_to_coordinate_domain)
+                .range(screen_location_to_coordinate_range);
+
+            this.coordinate_to_screen_location_scale = d3.scale
+                .linear()
+                .domain(screen_location_to_coordinate_range)
+                .range(screen_location_to_coordinate_domain);
 
             this.metadata = {
                 start_coordinate: region_data[0].start,
