@@ -88,6 +88,33 @@ function (
         height: 40,
         color_scheme: {
             'all': 'gray'
+        },
+        hovercard_config: {
+            include_header: false,
+            include_footer: true,
+            self_hover: true,
+            timeout: 200,
+            tool_config: []
+        },
+        hovercard_content: {
+            "DB": function(d) {
+                return d.dbname;
+            },
+            "EVD": function(d) {
+                return d.evd;
+            },
+            "ID": function(d) {
+                return d.id;
+            },
+            "Name": function(d) {
+                return d.name;
+            },
+            "Status": function(d) {
+                return d.status;
+            },
+            "LOC": function(d) {
+                return d.start + " - " + d.end;
+            }
         }
     };
 
@@ -253,7 +280,7 @@ function (
         _initProteinDomainTrack: function(track_info) {
             var self = this,
                 track_data = track_info.data,
-                config = _.extend(DEFAULT_PROTEIN_DOMAIN_TRACK_CONFIG, this.config.protein_domain_tracks);
+                config = _.extend(DEFAULT_PROTEIN_DOMAIN_TRACK_CONFIG, this.config.protein_domain_tracks, track_info.config);
 
             var track_instance = ProteinDomainTrackFactory
                 .create()
@@ -376,11 +403,12 @@ function (
             });
         },
 
-        addProteinDomainTrackToElement: function(domain_object, track_container_element) {
+        addProteinDomainTrackToElement: function(domain_object, track_container_element, track_config) {
             this.tracks_array.push({
                 type: 'protein_domains',
                 data: domain_object,
-                element: track_container_element
+                element: track_container_element,
+                config: track_config
             });
         },
 
