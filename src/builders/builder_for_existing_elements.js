@@ -58,7 +58,19 @@ function (
         },
         glyph_width: 5.0,
         height: SAMPLE_PLOT_TRACK_MAX_HEIGHT,
-        stem_height: 30.0
+        stem_height: 30.0,
+        hovercard_config: {
+            include_header: false,
+            include_footer: true,
+            self_hover: true,
+            timeout: 200,
+            tool_config: []
+        },
+        hovercard_content: {
+            "key": function(d) {
+                return "value";
+            }
+        }
     };
 
     var DEFAULT_REGION_LAYOUT_CONFIG = {
@@ -192,7 +204,7 @@ function (
 
         _initBarPlotTrack: function(track_info) {
             var self = this,
-                config = _.extend(DEFAULT_BAR_PLOT_TRACK_CONFIG, this.config.bar_plot_tracks),
+                config = _.extend(DEFAULT_BAR_PLOT_TRACK_CONFIG, this.config.bar_plot_tracks, track_info.config),
                 track_data = track_info.data,
                 track_instance = BarPlotTrackFactory
                     .create()
@@ -209,7 +221,7 @@ function (
 
         _initSamplePlotTrack: function(track_info) {
             var self = this,
-                config = _.extend(DEFAULT_SAMPLE_PLOT_TRACK_CONFIG, this.config.sample_plot_tracks),
+                config = _.extend(DEFAULT_SAMPLE_PLOT_TRACK_CONFIG, this.config.sample_plot_tracks, track_info.config),
                 track_data = track_info.data,
                 track_instance = SamplePlotTrackFactory
                     .create()
@@ -236,8 +248,8 @@ function (
                 .viewport(self.viewport);
         },
 
-        _initRegionScaleTrack: function() {
-            var config = _.extend(DEFAULT_REGION_TRACK_CONFIG, this.config.region_track),
+        _initRegionScaleTrack: function(track_info) {
+            var config = _.extend(DEFAULT_REGION_TRACK_CONFIG, this.config.region_track, track_info.config),
                 track_instance = RegionTrackFactory
                     .create()
                     .data(this.region_data);
@@ -262,9 +274,9 @@ function (
 
         },
 
-        _initTickTrack: function() {
+        _initTickTrack: function(track_info) {
             var self = this,
-                config = _.extend(DEFAULT_TICK_TRACK_CONFIG, this.config.tick_tracks);
+                config = _.extend(DEFAULT_TICK_TRACK_CONFIG, this.config.tick_tracks, track_info.config);
 
             var track_instance = TickTrackFactory
                 .create()
@@ -311,11 +323,11 @@ function (
                     context = self._initSampleBasedTrackContext(track_instance, track_info);
                 }
                 else if (track_info.type == 'region_scale') {
-                    track_instance = self._initRegionScaleTrack();
+                    track_instance = self._initRegionScaleTrack(track_info);
                     context = self._initRegionDataDependentContext(track_instance, track_info);
                 }
                 else if (track_info.type == 'tick') {
-                    track_instance = self._initTickTrack();
+                    track_instance = self._initTickTrack(track_info);
                     context = self._initRegionDataDependentContext(track_instance, track_info);
                 }
                 else if (track_info.type == 'protein_domains') {
@@ -353,7 +365,7 @@ function (
         ////////////////
         // Public API //
         ////////////////
-        addBarPlotTrackWithArrayData: function(variant_array, track_container_element) {
+        addBarPlotTrackWithArrayData: function(variant_array, track_container_element, track_config) {
             var type_field_name = this.config.variant_data_type_field,
                 location_field_name = this.config.variant_data_location_field;
 
@@ -367,11 +379,12 @@ function (
             this.tracks_array.push({
                 type: 'bar_plot',
                 data: track_data,
-                element: track_container_element
+                element: track_container_element,
+                config: track_config
             });
         },
 
-        addSamplePlotTrackWithArrayData: function(variant_array, track_container_element) {
+        addSamplePlotTrackWithArrayData: function(variant_array, track_container_element, track_config) {
             var type_field_name = this.config.variant_data_type_field,
                 location_field_name = this.config.variant_data_location_field;
 
@@ -385,21 +398,24 @@ function (
             this.tracks_array.push({
                 type: 'sample_plot',
                 data: track_data,
-                element: track_container_element
+                element: track_container_element,
+                config: track_config
             });
         },
 
-        addRegionScaleTrackToElement: function(track_container_element) {
+        addRegionScaleTrackToElement: function(track_container_element, track_config) {
             this.tracks_array.push({
                 type: 'region_scale',
-                element: track_container_element
+                element: track_container_element,
+                config: track_config
             });
         },
 
-        addTickTrackToElement: function(track_container_element) {
+        addTickTrackToElement: function(track_container_element, track_config) {
             this.tracks_array.push({
                 type: 'tick',
-                element: track_container_element
+                element: track_container_element,
+                config: track_config
             });
         },
 
