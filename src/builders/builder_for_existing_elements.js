@@ -11,7 +11,8 @@ define   (
     '../tracks/bar_plot_track',
     '../tracks/sample_plot_track',
     '../tracks/region_scale_track',
-    '../tracks/horizontal_tick_track'
+    '../tracks/horizontal_tick_track',
+    '../tracks/protein_domain_track'
 ],
 function (
     d3,
@@ -25,7 +26,8 @@ function (
     BarPlotTrackFactory,
     SamplePlotTrackFactory,
     RegionTrackFactory,
-    TickTrackFactory
+    TickTrackFactory,
+    ProteinDomainTrackFactory
 ) {
     var VERTICAL_PADDING = 10,
         BAR_PLOT_TRACK_MAX_HEIGHT = 100,
@@ -79,6 +81,14 @@ function (
         height: TICK_TRACK_HEIGHT,
         tick_height: 10,
         tick_text_y: 22
+    };
+
+    var DEFAULT_PROTEIN_DOMAIN_TRACK_CONFIG = {
+        domain_height: 10,
+        height: 40,
+        color_scheme: {
+            'all': 'gray'
+        }
     };
 
     var BuilderForExistingElementsPrototype = {
@@ -195,6 +205,7 @@ function (
                 .track(track_instance)
                 .width(self.config.viewport.width)
                 .scroll_handler(self.scroll_handler)
+                .region_layout(self.region_layout)
                 .viewport(self.viewport);
         },
 
@@ -219,7 +230,42 @@ function (
                 .track(track_instance)
                 .width(self.config.viewport.width)
                 .scroll_handler(self.scroll_handler)
-                .viewport(self.viewport);
+                .viewport(self.viewport)
+                .region_layout(self.region_layout);
+
+        },
+
+        _initTickTrack: function() {
+            var self = this,
+                config = _.extend(DEFAULT_TICK_TRACK_CONFIG, this.config.tick_tracks);
+
+            var track_instance = TickTrackFactory
+                .create()
+                .data(self.region_data);
+
+            _.each(config, function(value, function_key) {
+                track_instance[function_key](value);
+            });
+
+            return track_instance;
+        },
+
+        _initProteinDomainTrack: function(track_info) {
+            var self = this,
+                track_data = track_info.data,
+                config = _.extend(DEFAULT_PROTEIN_DOMAIN_TRACK_CONFIG, this.config.protein_domain_tracks);
+
+            var track_instance = ProteinDomainTrackFactory
+                .create()
+                .domain_data(track_data)
+                .regions(self.region_data, 'coordinate')
+                .variant_layout(self.variant_layout);
+
+            _.each(config, function(value, function_key) {
+                track_instance[function_key](value);
+            });
+
+            return track_instance;
         },
 
         _initTrackContexts: function() {
@@ -245,6 +291,10 @@ function (
                     track_instance = self._initTickTrack();
                     context = self._initRegionDataDependentContext(track_instance, track_info);
                 }
+                else if (track_info.type == 'protein_domains') {
+                    track_instance = self._initProteinDomainTrack(track_info);
+                    context = self._initRegionDataDependentContext(track_instance, track_info);
+                }
                 else {
                     console.log("Skipping " + track_info.type);
                     return;
@@ -253,21 +303,6 @@ function (
                 track_info.track_instance = track_instance;
                 track_info.context = context;
             });
-        },
-
-        _initTickTrack: function() {
-            var self = this,
-                config = _.extend(DEFAULT_TICK_TRACK_CONFIG, this.config.tick_track);
-
-            var track_instance = TickTrackFactory
-                .create()
-                .data(self.region_data);
-
-            _.each(config, function(value, function_key) {
-                track_instance[function_key](value);
-            });
-
-            return track_instance;
         },
 
         _initScrollHandler: function() {
@@ -337,6 +372,14 @@ function (
         addTickTrackToElement: function(track_container_element) {
             this.tracks_array.push({
                 type: 'tick',
+                element: track_container_element
+            });
+        },
+
+        addProteinDomainTrackToElement: function(domain_object, track_container_element) {
+            this.tracks_array.push({
+                type: 'protein_domains',
+                data: domain_object,
                 element: track_container_element
             });
         },

@@ -14,6 +14,103 @@ function (
 
     SeqPeekBuilder
 ) {
+    var protein_domain_data = [
+        {
+            "status": "T",
+            "name": "P53_tetramer",
+            "evd": "HMMPfam",
+            "locations": [
+                {
+                    "start": 1000,
+                    "score": 9.299999999999977e-20,
+                    "end": 1100
+                }
+            ],
+            "id": "PF07710",
+            "ipr": {
+                "type": "Domain",
+                "id": "IPR010991",
+                "name": "p53, tetramerisation domain"
+            },
+            "dbname": "PFAM"
+        },
+        {
+            "status": "T",
+            "name": "P53",
+            "evd": "HMMPfam",
+            "locations": [
+                {
+                    "start": 1200,
+                    "score": 1.1000000000000125e-109,
+                    "end": 1300
+                }
+            ],
+            "id": "PF00870",
+            "ipr": {
+                "parent_id": "IPR012346",
+                "type": "Domain",
+                "id": "IPR011615",
+                "name": "p53, DNA-binding domain"
+            },
+            "dbname": "PFAM"
+        },
+        {
+            "status": "T",
+            "name": "P53_TAD",
+            "evd": "HMMPfam",
+            "locations": [
+                {
+                    "start": 1800,
+                    "score": 1.999999999999999e-10,
+                    "end": 6010
+                }
+            ],
+            "id": "PF08563",
+            "ipr": {
+                "type": "Domain",
+                "id": "IPR013872",
+                "name": "p53 transactivation domain"
+            },
+            "dbname": "PFAM"
+        },
+        {
+            "status": "T",
+            "name": "DM14",
+            "evd": "Smart scan",
+            "locations": [
+                {
+                    "start": 950,
+                    "score": 2.4999981195646482e-17,
+                    "end": 1050
+                },
+                {
+                    "start": 1250,
+                    "score": 4.699982625131954e-35,
+                    "end": 1350
+                },
+                {
+                    "start": 1400,
+                    "score": 3.3999997243771875e-35,
+                    "end": 1450
+                }
+            ],
+            "id": "SM00685",
+            "ipr": {
+                "type": "Domain",
+                "id": "IPR006608",
+                "name": "Domain of unknown function DM14"
+            },
+            "dbname": "SMART"
+        }
+    ];
+
+    var protein_metadata = {
+        "uniprot_id": "P04637",
+        "length": 393,
+        "id": "509ae7ad2f2636146b308491",
+        "name": "P53_HUMAN"
+    };
+
     var generate_region = function(transcript, type, start, end) {
         return {
             type: type,
@@ -78,7 +175,7 @@ function (
         var vis_svg = d3.select(target_el)
             .append("svg")
             .attr("width", 1300)
-            .attr("height", 150 + 150 + 20)
+            .attr("height", 150 + 150 + 70)
             .style("pointer-events", "none");
 
         var bar_plot_track_svg = vis_svg
@@ -100,6 +197,11 @@ function (
             .attr("transform", "translate(0,290)")
             .style("pointer-events", "none");
 
+        var protein_domain_track_svg = vis_svg
+            .append("g")
+            .attr("transform", "translate(0,330)")
+            .style("pointer-events", "none");
+
         //////////////////
         var seqpeek = SeqPeekBuilder.create({
             region_data: regions,
@@ -119,6 +221,14 @@ function (
                     'CD': 'red'
                 }
             },
+            protein_domain_tracks: {
+                source_key: 'dbname',
+                source_order: ['SMART', 'PFAM', 'PROFILE'],
+                color_scheme: {
+                    'PFAM': 'lightgray',
+                    'SMART': 'gray'
+                }
+            },
             region_layout: {
                 intron_width: 50
             },
@@ -133,6 +243,7 @@ function (
         seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg);
         seqpeek.addRegionScaleTrackToElement(region_track_svg);
         seqpeek.addTickTrackToElement(tick_track_svg);
+        seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg);
         seqpeek.draw();
     };
 
