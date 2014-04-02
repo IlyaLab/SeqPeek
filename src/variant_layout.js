@@ -76,10 +76,6 @@ function (
             return this;
         },
 
-        _findScreenLocationForFirstType: function() {
-
-        },
-
         doLayoutForViewport: function(visible_coordinates, location_info) {
             var self = this,
                 start = visible_coordinates[0],

@@ -7,23 +7,13 @@ function (
 ) {
     var prototype = {
         _getCoordinateFromScaleLocation: function(x) {
-            var region;
-
-            for (var i = 0; i < this.region_data.length; ++i) {
-                region = this.region_data[i];
-
-                if (region.layout.screen_x <= x && x <= (region.layout.screen_x + region.layout.screen_width)) {
-                    return region.layout.inverse_scale(x);
-                }
-            }
-
-            return _.last(this.region_data).end;
+            return this.region_layout.getCoordinateFromScreenLocation(x);
         },
 
         _getVisibleCoordinates: function() {
             var start_x = -this.viewport_pos.x,
                 min_x = d3.max([start_x, 0]),
-                max_x = d3.min([start_x + self.width, self.width]);
+                max_x = d3.min([start_x + this.width, this.width]);
 
             var start = this._getCoordinateFromScaleLocation(min_x);
             var end = this._getCoordinateFromScaleLocation(max_x);
@@ -47,15 +37,17 @@ function (
             this.viewport_pos = param;
         },
 
-        translate: function(x_translation) {
+        region_layout: function(value) {
+            this.region_layout = value;
 
+            return this;
         }
     };
 
     return {
-        createFromRegionData: function(region_data, metadata, width) {
+        createFromRegionData: function(region_layout, metadata, width) {
             var obj = Object.create(prototype, {});
-            obj.region_data = region_data;
+            obj.region_layout = region_layout;
             obj.region_metadata = metadata;
             obj.viewport_pos = {
                 x: 0,

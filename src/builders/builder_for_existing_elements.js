@@ -170,10 +170,9 @@ function (
 
         _initViewport: function() {
             var self = this,
-                region_data = self.region_data,
                 region_metadata = self.region_metadata;
 
-            this.viewport = ViewportFactory.createFromRegionData(region_data, region_metadata, this.config.viewport.width);
+            this.viewport = ViewportFactory.createFromRegionData(this.region_layout, region_metadata, this.config.viewport.width);
 
             this.viewport.setViewportPosition({
                 x: 0,
