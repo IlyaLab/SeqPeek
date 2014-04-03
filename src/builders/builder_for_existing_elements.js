@@ -49,7 +49,19 @@ function (
             max_height: BAR_PLOT_TRACK_MAX_HEIGHT - 30,
             scaling_factor: 200
         },
-        category_totals: {}
+        category_totals: {},
+        hovercard_config: {
+            include_header: false,
+            include_footer: true,
+            self_hover: true,
+            timeout: 200,
+            tool_config: []
+        },
+        hovercard_content: {
+            "key": function(d) {
+                return "value";
+            }
+        }
     };
 
     var DEFAULT_SAMPLE_PLOT_TRACK_CONFIG = {
@@ -86,7 +98,22 @@ function (
     };
 
     var DEFAULT_REGION_TRACK_CONFIG = {
-        height: REGION_TRACK_HEIGHT
+        height: REGION_TRACK_HEIGHT,
+        hovercard_config: {
+            include_header: false,
+            include_footer: true,
+            self_hover: true,
+            timeout: 200,
+            tool_config: []
+        },
+        hovercard_content: {
+            "Coordinates": function(d) {
+                return d.start + " - " + d.end;
+            },
+            "Type": function(d) {
+                return d.type;
+            }
+        }
     };
 
     var DEFAULT_TICK_TRACK_CONFIG = {

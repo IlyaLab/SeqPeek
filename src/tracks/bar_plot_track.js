@@ -59,6 +59,9 @@ function(
                 _.each(type_data.render_data.array, function(bar_data) {
                     current_y = bar_base_y - bar_data.height;
                     bar_rendering_data.push(_.extend(bar_data, {
+                        coordinate: coordinate,
+                        statistics: type_data.statistics,
+                        type: type_data.type,
                         y: current_y,
                         screen_x: variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x - self.config.bar_width / 2.0
                     }));
@@ -99,6 +102,25 @@ function(
 
         getVariantLayout: function() {
             return this.config.variant_layout;
+        },
+
+        guid: function(value) {
+            this.config.guid = value;
+
+            return this;
+        },
+
+        hovercard_config: function(value) {
+            this.config.hovercard.config = value;
+
+            return this;
+        },
+
+        hovercard_content: function(value) {
+            this.config.hovercard.enable = true;
+            this.config.hovercard.content = value;
+
+            return this;
         },
 
         //////////////
@@ -167,6 +189,15 @@ function(
         //////////////////////////////////
         // Internal rendering functions //
         //////////////////////////////////
+        _buildHovercardHandler: function() {
+            var handler_params = _.extend(this.config.hovercard.config, {
+                canvas_id: this.config.guid,
+                data_config: this.config.hovercard.content
+            });
+
+            return vq.hovercard(handler_params);
+        },
+
         _renderBars: function() {
             var self = this,
                 ctx = this._getRenderingContext();
@@ -175,7 +206,7 @@ function(
                 .selectAll(".variant")
                 .remove();
 
-            ctx.svg
+            var bars = ctx.svg
                 .selectAll(".variant")
                 .data(self.render_data.bars)
                 .enter()
@@ -194,6 +225,19 @@ function(
                     .style("fill", function(d) {
                         return d.color;
                     });
+
+            if (this.config.hovercard.enable) {
+                var handler = this._buildHovercardHandler();
+
+                //ctx.svg
+                //    .selectAll(".variant")
+                bars
+                    .each(function() {
+                        d3.select(this).on("mouseover", function(d) {
+                            handler.call(this, d);
+                        });
+                    });
+            }
         },
 
         _renderStems: function() {
@@ -253,7 +297,11 @@ function(
     return {
         create: function(config) {
             var track = Object.create(BarPlotTrackPrototype, {});
-            track.config = {};
+            track.config = {
+                hovercard: {
+                    enable: false
+                }
+            };
             track.render_data = {};
             return track;
         }

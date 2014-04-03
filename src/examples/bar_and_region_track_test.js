@@ -216,7 +216,19 @@ function (
             },
             bar_plot_tracks: {
                 height: 150,
-                stem_height: 30
+                stem_height: 30,
+                hovercard_content: {
+                    "Coordinate": function(d) {
+                        return d.coordinate;
+                    },
+                    "Type": function(d) {
+                        return d.type;
+                    },
+                    "Total samples": function(d) {
+                        return d.statistics.total;
+                    }
+
+                }
             },
             sample_plot_tracks: {
                 height: 150,
@@ -256,11 +268,15 @@ function (
             variant_data_type_field: 'variant_type'
         });
 
-        seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg);
+        seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg, {
+            guid: container_guid
+        });
         seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg, {
             guid: container_guid
         });
-        seqpeek.addRegionScaleTrackToElement(region_track_svg);
+        seqpeek.addRegionScaleTrackToElement(region_track_svg, {
+            guid: container_guid
+        });
         seqpeek.addTickTrackToElement(tick_track_svg);
         seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg, {
             guid: container_guid

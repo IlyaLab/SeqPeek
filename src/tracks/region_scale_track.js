@@ -12,11 +12,20 @@ function(
             return this.dimensions.height;
         },
 
+        _buildHovercardHandler: function() {
+            var handler_params = _.extend(this.config.hovercard.config, {
+                canvas_id: this.config.guid,
+                data_config: this.config.hovercard.content
+            });
+
+            return vq.hovercard(handler_params);
+        },
+
         _applySVG: function() {
             var self = this,
                 ctx = this._getRenderingContext();
 
-            ctx.svg.selectAll("g.region")
+            var regions_g = ctx.svg.selectAll("g.region")
                 .data(self.region_data)
                 .enter()
                     .append("g")
@@ -26,6 +35,17 @@ function(
                     .attr("transform", function(d) {
                         return "translate(" + d.layout.screen_x + ",0)";
                     });
+
+            if (this.config.hovercard.enable) {
+                var handler = this._buildHovercardHandler();
+
+                regions_g
+                    .each(function() {
+                        d3.select(this).on("mouseover", function(d) {
+                            handler.call(this, d);
+                        });
+                    });
+            }
         },
 
         _renderExon: function() {
@@ -93,6 +113,25 @@ function(
             return this;
         },
 
+        guid: function(value) {
+            this.config.guid = value;
+
+            return this;
+        },
+
+        hovercard_config: function(value) {
+            this.config.hovercard.config = value;
+
+            return this;
+        },
+
+        hovercard_content: function(value) {
+            this.config.hovercard.enable = true;
+            this.config.hovercard.content = value;
+
+            return this;
+        },
+
         ///////////////////
         // Rendering API //
         ///////////////////
@@ -114,7 +153,11 @@ function(
     return {
         create: function() {
             var track = Object.create(RegionTrackPrototype, {});
-
+            track.config = {
+                hovercard: {
+                    enable: false
+                }
+            };
             return track;
         }
     }
