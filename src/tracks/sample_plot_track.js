@@ -209,15 +209,6 @@ function(
             return vq.hovercard(handler_params);
         },
 
-        _applySVG: function() {
-            var ctx = this._getRenderingContext();
-            var max_height = this._getMaxHeightFromData();
-
-            console.log(max_height);
-
-            ctx.svg.attr("height", max_height);
-        },
-
         _renderSampleGlyphs: function() {
             var self = this,
                 ctx = this._getRenderingContext();
@@ -298,7 +289,6 @@ function(
         draw: function() {
             this._applySampleBasedRenderData(this.location_data);
 
-            // this._applySVG();
             this.render();
         },
 
