@@ -19,6 +19,22 @@ function(
             return this.dimensions.height;
         },
 
+        setHeightFromStatistics: function() {
+            var bar_heights = [];
+            DataAdapters.apply_to_variant_types(this.location_data, function(type_data, memo) {
+                var total_bar_height_in_location = d3.sum(type_data.render_data.array, function(bar_data) {
+                    return bar_data.height;
+                });
+
+                bar_heights.push(total_bar_height_in_location);
+            });
+            var max_local_bar_height = d3.max(bar_heights);
+            var height = max_local_bar_height + this.config.stem_height;
+            this.dimensions.height = height;
+
+            return this;
+        },
+
         _applyStackedBarRenderData: function(data) {
             var self = this,
                 scaling_function = ScalingFunctions.getScalingFunctionByType(this.config.scaling.type),
@@ -277,8 +293,11 @@ function(
         ///////////////////
         // Rendering API //
         ///////////////////
-        draw: function() {
+        createStaticRenderData: function() {
             this._applyStackedBarRenderData(this.location_data);
+        },
+
+        draw: function() {
 
             this.render();
         },

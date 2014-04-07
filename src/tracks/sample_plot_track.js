@@ -17,6 +17,13 @@ function(
             return this.dimensions.height;
         },
 
+        setHeightFromStatistics: function() {
+            var height = this.statistics.max_samples_in_location * this.config.glyph_width + this.config.stem_height;
+            this.dimensions.height = height;
+
+            return this;
+        },
+
         _applySampleBasedRenderData: function(data) {
             var self = this,
                 radius = this.config.glyph_width / 2.0;
@@ -202,6 +209,15 @@ function(
             return vq.hovercard(handler_params);
         },
 
+        _applySVG: function() {
+            var ctx = this._getRenderingContext();
+            var max_height = this._getMaxHeightFromData();
+
+            console.log(max_height);
+
+            ctx.svg.attr("height", max_height);
+        },
+
         _renderSampleGlyphs: function() {
             var self = this,
                 ctx = this._getRenderingContext();
@@ -282,6 +298,7 @@ function(
         draw: function() {
             this._applySampleBasedRenderData(this.location_data);
 
+            // this._applySVG();
             this.render();
         },
 
