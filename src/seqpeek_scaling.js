@@ -6,7 +6,17 @@ function(
     d3,
     _
 ) {
-    var _createFractionalBars = function(samples_by_categories, render_info) {
+    var _getColor = function(group_name, type_name, color_info) {
+        if (_.isFunction(color_info)) {
+            return color_info(group_name, type_name);
+        }
+        else {
+            return color_info[group_name];
+        }
+
+    };
+
+    var _createFractionalBars = function(samples_by_categories, render_info, type_data) {
         var total_samples = _.reduce(samples_by_categories, function(memo, value, key) {
             return memo + value;
         }, 0);
@@ -18,8 +28,8 @@ function(
 
             memo.array.push({
                 height: height,
-                color: color_scale(group_name),
-                y: memo.current_y
+                y: memo.current_y,
+                color: _getColor(group_name, type_data.type, render_info.category_colors)
             });
 
             memo.current_y += height;
@@ -31,7 +41,7 @@ function(
         }));
     };
 
-    var _createLinearBars = function(samples_by_categories, param_statistics, render_info) {
+    var _createLinearBars = function(samples_by_categories, param_statistics, render_info, type_data) {
         var pixels_per_sample = 1,
             category_max_height = render_info.max_height / _.keys(samples_by_categories).length;
 
@@ -47,8 +57,8 @@ function(
             if (number > 0) {
                 memo.array.push({
                     height: height,
-                    color: render_info.category_colors(group_name),
-                    y: memo.current_y
+                    y: memo.current_y,
+                    color: _getColor(group_name, type_data.type, render_info.category_colors)
                 });
 
                 memo.current_y += height;
@@ -61,7 +71,7 @@ function(
         }));
     };
 
-    var _createLog2Bars = function(samples_by_categories, track_statistics, category_totals, render_info) {
+    var _createLog2Bars = function(samples_by_categories, track_statistics, category_totals, render_info, type_data) {
         var category_max_height = render_info.max_height / _.keys(samples_by_categories).length;
 
         var log_scale = d3.scale
@@ -76,8 +86,8 @@ function(
             if (number > 0) {
                 memo.array.push({
                     height: height,
-                    color: render_info.category_colors[group_name],
-                    y: memo.current_y
+                    y: memo.current_y,
+                    color: _getColor(group_name, type_data.type, render_info.category_colors)
                 });
 
                 memo.current_y += height;
@@ -92,7 +102,7 @@ function(
         return bars;
     };
 
-    var _createNormalizedLinearBars = function(samples_by_categories, track_statistics, category_totals, render_info) {
+    var _createNormalizedLinearBars = function(samples_by_categories, track_statistics, category_totals, render_info, type_data) {
         var min_height = render_info.min_height,
             max_height = render_info.max_height,
             pixels_per_sample = render_info.scaling_factor;
@@ -114,7 +124,7 @@ function(
                     memo.array.push({
                         height: height,
                         y: memo.current_y,
-                        color: render_info.category_colors[group_name]
+                        color: _getColor(group_name, type_data.type, render_info.category_colors)
                     });
 
                     memo.current_y += height;
