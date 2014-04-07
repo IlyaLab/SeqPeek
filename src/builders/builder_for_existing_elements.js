@@ -343,6 +343,7 @@ function (
                 if (track_info.type == 'bar_plot') {
                     track_instance = self._initBarPlotTrack(track_info);
                     context = self._initSampleBasedTrackContext(track_instance, track_info);
+                    track_instance.createStaticRenderData();
                 }
                 else if (track_info.type == 'sample_plot') {
                     track_instance = self._initSamplePlotTrack(track_info);
@@ -402,12 +403,16 @@ function (
                 data_array: variant_array
             });
 
-            this.tracks_array.push({
+            var track_info = {
                 type: 'bar_plot',
                 data: track_data,
                 element: track_container_element,
                 config: track_config
-            });
+            };
+
+            this.tracks_array.push(track_info);
+
+            return track_info;
         },
 
         addSamplePlotTrackWithArrayData: function(variant_array, track_container_element, track_config) {
@@ -421,12 +426,16 @@ function (
                 data_array: variant_array
             });
 
-            this.tracks_array.push({
+            var track_info = {
                 type: 'sample_plot',
                 data: track_data,
                 element: track_container_element,
                 config: track_config
-            });
+            };
+
+            this.tracks_array.push(track_info);
+
+            return track_info;
         },
 
         addRegionScaleTrackToElement: function(track_container_element, track_config) {
@@ -454,7 +463,30 @@ function (
             });
         },
 
-        draw: function() {
+        setTrackHeightsByStatistics: function(track_type) {
+            _.chain(this.tracks_array)
+                .filter(function(track_info) {
+                    return track_info.type == track_type;
+                })
+                .each(function(track_info) {
+                    track_info.track_instance.setHeightFromStatistics();
+                });
+        },
+
+        getTrackHeights: function(track_type) {
+            var heights = _.chain(this.tracks_array)
+                .filter(function(track_info) {
+                    return track_info.type == track_type;
+                })
+                .map(function(track_info) {
+                    return track_info.track_instance.getHeight()
+                })
+                .value();
+
+            return heights;
+        },
+
+        createInstances: function() {
             this._initRegionLayout();
             this._initVariantLayout();
             this._initViewport();
@@ -465,10 +497,17 @@ function (
 
             var initial_viewport = this.tracks_array[0].context.getCurrentViewport();
             this.variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), 'coordinate');
+        },
 
+        render: function() {
             _.each(this.tracks_array, function(track_info) {
                 track_info.context.draw();
             });
+        },
+
+        draw: function() {
+            this.createInstances();
+            this.render();
         }
     };
 
