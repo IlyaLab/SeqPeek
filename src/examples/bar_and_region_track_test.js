@@ -281,7 +281,18 @@ function (
         seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg, {
             guid: container_guid
         });
-        seqpeek.draw();
+
+        seqpeek.createInstances();
+
+        seqpeek.setTrackHeightsByStatistics('bar_plot');
+        var bar_plot_track_heights = seqpeek.getTrackHeights('bar_plot');
+        bar_plot_track_svg.attr("height", d3.sum(bar_plot_track_heights));
+
+        seqpeek.setTrackHeightsByStatistics('sample_plot');
+        var sample_track_heights = seqpeek.getTrackHeights('sample_plot');
+        lollipop_track_svg.attr("height", d3.sum(sample_track_heights));
+
+        seqpeek.render();
     };
 
     var test_obj = Object.create(SeqPeekTestPrototype, {});
