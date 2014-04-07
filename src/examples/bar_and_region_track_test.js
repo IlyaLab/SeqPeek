@@ -227,7 +227,15 @@ function (
                     "Total samples": function(d) {
                         return d.statistics.total;
                     }
+                },
+                color_scheme: function(group_name, type_name) {
+                    var colors = {
+                        'AB': 'blue',
+                        'XY': 'green',
+                        'CD': 'red'
+                    };
 
+                    return colors[type_name];
                 }
             },
             sample_plot_tracks: {
