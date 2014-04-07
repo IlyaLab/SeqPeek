@@ -39,12 +39,12 @@ function(
             var self = this,
                 scaling_function = ScalingFunctions.getScalingFunctionByType(this.config.scaling.type),
                 category_totals = this.config.category_totals,
-                render_info = _.extend(this.config.scaling, {
+                render_info = _.extend(self.config.scaling, {
                     category_colors: self.config.color_scheme
                 });
 
             DataAdapters.apply_to_variant_types(data, function(type_data, memo) {
-                type_data.render_data = scaling_function(type_data.statistics.by_category, self.statistics, category_totals, render_info);
+                type_data.render_data = scaling_function(type_data.statistics.by_category, self.statistics, category_totals, render_info, type_data);
             });
         },
 
@@ -155,8 +155,8 @@ function(
             return this;
         },
 
-        color_scheme: function(color_scheme) {
-            this.config.color_scheme = color_scheme;
+        color_scheme: function(value) {
+            this.config.color_scheme = value;
 
             return this;
         },
@@ -245,8 +245,6 @@ function(
             if (this.config.hovercard.enable) {
                 var handler = this._buildHovercardHandler();
 
-                //ctx.svg
-                //    .selectAll(".variant")
                 bars
                     .each(function() {
                         d3.select(this).on("mouseover", function(d) {
