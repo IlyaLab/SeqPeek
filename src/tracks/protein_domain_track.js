@@ -60,6 +60,10 @@ function(
                 data_config: this.config.hovercard.content
             });
 
+            if (this.config.hovercard.enable_tools) {
+                handler_params.tool_config = this.config.hovercard.links;
+            }
+
             return vq.hovercard(handler_params);
         },
 
@@ -172,6 +176,13 @@ function(
         hovercard_content: function(value) {
             this.config.hovercard.enable = true;
             this.config.hovercard.content = value;
+
+            return this;
+        },
+
+        hovercard_links: function(value) {
+            this.config.hovercard.enable_tools = true;
+            this.config.hovercard.links = value;
 
             return this;
         },

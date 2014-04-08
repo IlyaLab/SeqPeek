@@ -18,6 +18,10 @@ function(
                 data_config: this.config.hovercard.content
             });
 
+            if (this.config.hovercard.enable_tools) {
+                handler_params.tool_config = this.config.hovercard.links;
+            }
+
             return vq.hovercard(handler_params);
         },
 
@@ -36,7 +40,7 @@ function(
                         return "translate(" + d.layout.screen_x + ",0)";
                     });
 
-            if (this.config.hovercard.enable) {
+            if (this.config.hovercard.enable || this.config.hovercard.enable_tools) {
                 var handler = this._buildHovercardHandler();
 
                 regions_g
@@ -132,6 +136,13 @@ function(
             return this;
         },
 
+        hovercard_links: function(value) {
+            this.config.hovercard.enable_tools = true;
+            this.config.hovercard.links = value;
+
+            return this;
+        },
+
         ///////////////////
         // Rendering API //
         ///////////////////
@@ -155,7 +166,8 @@ function(
             var track = Object.create(RegionTrackPrototype, {});
             track.config = {
                 hovercard: {
-                    enable: false
+                    enable: false,
+                    enable_tools: false
                 }
             };
             return track;
