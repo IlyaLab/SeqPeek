@@ -31,12 +31,11 @@ function(
             DataAdapters.apply_to_variant_types(data, function(type_data, memo) {
                 var render_data = {
                         array: []
-                    },
-                    color = self.config.color_scheme[type_data.type];
+                    };
 
                 _.each(type_data.data, function(data_point, index) {
                     render_data.array.push(_.extend(data_point, {
-                        color: color,
+                        color: self.config.color_scheme(data_point),
                         r: radius
                     }));
                 });
@@ -132,7 +131,7 @@ function(
         },
 
         color_scheme: function(color_scheme) {
-            this.config.color_scheme = color_scheme;
+            this.config.color_scheme = DataAdapters.make_accessor(color_scheme);
 
             return this;
         },
