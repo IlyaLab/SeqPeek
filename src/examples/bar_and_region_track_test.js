@@ -241,10 +241,14 @@ function (
             sample_plot_tracks: {
                 height: 150,
                 stem_height: 30,
-                color_scheme: {
-                    'AB': 'blue',
-                    'XY': 'green',
-                    'CD': 'red'
+                color_scheme: function(data_point){
+                    var mapping = {
+                        'AB': 'blue',
+                        'XY': 'green',
+                        'CD': 'red'
+                    };
+
+                    return mapping[data_point["variant_type"]];
                 },
                 hovercard_content: {
                     "coordinate": function(d) {
