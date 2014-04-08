@@ -209,7 +209,8 @@ function(
             var track = Object.create(ProteinDomainTrackPrototype, {});
             track.config = {
                 hovercard: {
-                    enable: false
+                    enable: false,
+                    enable_tools: false
                 }
             };
             return track;
