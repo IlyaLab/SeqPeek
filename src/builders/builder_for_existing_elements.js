@@ -379,8 +379,9 @@ function (
                     y: 0
                 });
 
-                var visible_coordinates = self.viewport._getVisibleCoordinates();
-                self.variant_layout.doLayoutForViewport(visible_coordinates, 'coordinate');
+                self.viewport.setViewportScale(event.scale);
+
+                self.variant_layout.doLayoutForViewport(self.viewport, 'coordinate');
 
                 _.each(self.tracks_array, function(track_info) {
                     var context = track_info.context;
@@ -496,7 +497,8 @@ function (
             this._initTrackContexts();
 
             var initial_viewport = this.tracks_array[0].context.getCurrentViewport();
-            this.variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), 'coordinate');
+            //this.variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), 'coordinate');
+            this.variant_layout.doLayoutForViewport(this.viewport, 'coordinate');
         },
 
         render: function() {
