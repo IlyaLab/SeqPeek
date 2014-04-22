@@ -20,6 +20,7 @@ function (
     var VariantLayoutPrototype = {
         init: function() {
             this.data_array = [];
+            this.location_to_type_scale_map = {};
 
             return this;
         },
@@ -73,15 +74,19 @@ function (
             this.internal_type_accessor = DataAdapters.make_accessor(type_info);
             this.grouped_data = this.data_array;
 
+
             return this;
         },
 
         doLayoutForViewport: function(visible_coordinates, location_info) {
             var self = this,
                 start = visible_coordinates[0],
-                stop = visible_coordinates[1],
-                current_location = 0.0,
-                type_accessor = this.internal_type_accessor,
+                stop = visible_coordinates[1];
+
+            // Start of unoccupied horizontal screen space in screen coordinates
+            var current_location = 0.0;
+
+            var type_accessor = this.internal_type_accessor,
                 location_accessor = (location_info !== undefined) ? DataAdapters.make_accessor(location_info) : self.location_accessor;
 
             var visible_data_points = _.chain(this.grouped_data)
@@ -94,19 +99,32 @@ function (
 
             this.layout_map = {};
             GeneRegionUtils.iterateDataWithRegions(this.region_data, visible_data_points, location_accessor, function(d) {
-                var location = location_accessor(d.data),
-                    coordinate_center = d.region.layout.get_location_in_local_scale(location),
-                    num_types = d.data.types.length,
-                    group_width = num_types * self.variant_width_value,
+                var location = location_accessor(d.data);
+
+                var stem_location = d.region.layout.get_location_in_local_scale(location),
+                    group_width,
+                    type_scale,
+                    left_edge;
+
+                // Cache the scales for each location, as the scale doesn't change when the viewport is changed
+                if (_.has(self.location_to_type_scale_map, location)) {
+                    type_scale = self.location_to_type_scale_map[location];
+                    group_width = type_scale.rangeExtent()[1];
+                    left_edge = stem_location - group_width / 2.0;
+                }
+                else {
+                    group_width = d.data.types.length * self.variant_width_value;
                     type_scale = d3.scale.ordinal()
                         .domain(_.map(d.data.types, type_accessor))
-                        .range([0, group_width]);
+                        .rangePoints([0, group_width], 1.0);
+                    left_edge = stem_location - group_width / 2.0;
 
-                current_location = _.max(
-                    [
-                        current_location + group_width / 2.0,
-                        coordinate_center
-                    ]);
+                    self.location_to_type_scale_map[location] = type_scale;
+                }
+
+                if (current_location > left_edge) {
+                    left_edge = current_location;
+                }
 
                 _.chain(d.data.types)
                     .sortBy(function(type_data) {
@@ -114,11 +132,11 @@ function (
                     })
                     .each(function(type_data) {
                         var type_value = type_accessor(type_data);
-                        var variant_screen_location = current_location + type_scale(type_value);
+                        var variant_screen_location = left_edge + type_scale(type_value);
                         _put_variant_screen_location(self.layout_map, location, type_value, variant_screen_location);
                     });
 
-                current_location += group_width / 2.0;
+                current_location = left_edge + group_width;
             });
 
             return this;
