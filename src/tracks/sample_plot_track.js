@@ -85,6 +85,7 @@ function(
             var self = this,
                 ctx = this._getRenderingContext(),
                 variant_layout = this.getVariantLayout(),
+                viewport = ctx.getViewport(),
                 viewport_x = ctx.getViewportPosition().x;
 
             var stem_rendering_data = [];
@@ -94,7 +95,7 @@ function(
 
                 DataAdapters.apply_to_variant_types([d.data], function(type_data, memo, location_data) {
                     var coordinate = location_data.coordinate,
-                        stem_start_x = region.layout.get_screen_location_for_coordinate(coordinate, ctx),
+                        stem_start_x = viewport._getScaleLocationFromCoordinate(coordinate) + viewport_x,
                         stem_end_x = variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x;
 
                     stem_rendering_data.push({

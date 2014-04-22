@@ -199,7 +199,11 @@ function(
             var ctx = this._getRenderingContext();
 
             ctx.svg.attr("transform", function() {
-                return "translate(" + ctx.getViewportPosition().x + ",0)";
+                var trs =
+                    "translate(" + ctx.getViewportPosition().x + ",0)" +
+                    "scale(" + ctx.getViewportScale() + ",1)";
+
+                return trs;
             });
         }
     };
