@@ -78,8 +78,9 @@ function (
             return this;
         },
 
-        doLayoutForViewport: function(visible_coordinates, location_info) {
+        doLayoutForViewport: function(viewport, location_info) {
             var self = this,
+                visible_coordinates = viewport._getVisibleCoordinates(),
                 start = visible_coordinates[0],
                 stop = visible_coordinates[1];
 
@@ -101,7 +102,7 @@ function (
             GeneRegionUtils.iterateDataWithRegions(this.region_data, visible_data_points, location_accessor, function(d) {
                 var location = location_accessor(d.data);
 
-                var stem_location = d.region.layout.get_location_in_local_scale(location),
+                var stem_location = viewport._getScaleLocationFromCoordinate(location),
                     group_width,
                     type_scale,
                     left_edge;
