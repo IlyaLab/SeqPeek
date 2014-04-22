@@ -108,7 +108,9 @@ function(
                 getRegionLayout: function() {
                     return self.config.region_layout;
                 },
-
+                getViewport: function() {
+                    return self.config.viewport;
+                },
                 getViewportDimensions: function() {
                     return {
                         width: self.vis.viewport_size[0],
@@ -123,8 +125,11 @@ function(
                         y: viewport_pos.y
                     };
                 },
+                getViewportScale: function() {
+                    return self.config.viewport.getViewportScale();
+                },
                 getVisibleCoordinates: function() {
-                    return self.config.viewport._getVisibleCoordinates(-self.vis.viewport_pos[0]);
+                    return self.config.viewport._getVisibleCoordinates();
                 },
                 getVariantLayout: function() {
                     return self.config.variant_layout;
@@ -140,6 +145,7 @@ function(
 
         _updateViewportTranslation: function() {
             this.vis.viewport_pos = this.config.viewport.getViewportPosition();
+            this.vis.viewport_scale = this.config.viewport.getViewportScale();
 
             this.data.track.render();
         },
