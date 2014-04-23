@@ -147,6 +147,9 @@ function(
             this.vis.viewport_pos = this.config.viewport.getViewportPosition();
             this.vis.viewport_scale = this.config.viewport.getViewportScale();
 
+            this.vis.zoom.scale(this.vis.viewport_scale);
+            this.vis.zoom.translate([this.vis.viewport_pos.x, this.vis.viewport_pos.y]);
+
             this.data.track.render();
         },
 
