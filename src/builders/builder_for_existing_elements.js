@@ -297,7 +297,6 @@ function (
                 .scroll_handler(self.scroll_handler)
                 .viewport(self.viewport)
                 .region_layout(self.region_layout);
-
         },
 
         _initTickTrack: function(track_info) {
@@ -387,7 +386,7 @@ function (
                     var context = track_info.context;
                     _.bind(context._updateViewportTranslation, context)();
                 });
-            }
+            };
         },
 
         ////////////////
@@ -496,8 +495,6 @@ function (
 
             this._initTrackContexts();
 
-            var initial_viewport = this.tracks_array[0].context.getCurrentViewport();
-            //this.variant_layout.doLayoutForViewport(initial_viewport.getVisibleCoordinates(), 'coordinate');
             this.variant_layout.doLayoutForViewport(this.viewport, 'coordinate');
         },
 
