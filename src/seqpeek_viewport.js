@@ -17,9 +17,10 @@ function (
         _getVisibleCoordinates: function() {
             // Calculate the coordinate range that is visible on the screen
             var start_x = -this.viewport_pos.x,
-                scaled_width = this.width * this.viewport_scale,
+                regions_width = this.region_layout.metadata.total_width,
                 min_x = d3.max([start_x, 0]),
-                max_x = d3.min([start_x + scaled_width, scaled_width]);
+                // TODO fix
+                max_x = regions_width;
 
             var start = this._getCoordinateFromScaleLocation(min_x);
             var end = this._getCoordinateFromScaleLocation(max_x);
