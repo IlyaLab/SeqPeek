@@ -116,9 +116,6 @@ function(
         },
 
         _renderNonCoding: function() {
-            var self = this,
-                ctx = this._getRenderingContext();
-
             // TODO
             // Implement some kind of indicator for non-coding regions
         },
