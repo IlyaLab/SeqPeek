@@ -8,6 +8,10 @@ function(
     _
 ) {
     var LocationDisplayTrackPrototype = {
+        init: function() {
+            this.current_scale = null;
+        },
+
         getHeight: function() {
             return this.dimensions.height;
         },
@@ -22,6 +26,8 @@ function(
 
         _buildScales: function() {
             var self = this,
+                ctx = this._getRenderingContext(),
+                viewport = ctx.getViewport(),
                 region_ticks = {};
 
             _.chain(this.region_data)
@@ -29,17 +35,25 @@ function(
                     return region.type == 'exon';
                 })
                 .each(function(region) {
-                    var id = self._getRegionID(region),
-                        num_ticks = Math.floor(region.layout.screen_width / 100),
-                        ticks = region.layout.coordinate_scale.ticks(num_ticks),
-                        tick_data = _.map(ticks, function(tick_coordinate) {
-                            return {
-                                tick_text: tick_coordinate,
-                                x: region.layout.coordinate_scale(tick_coordinate) - region.layout.screen_x
-                            };
-                        });
+                    var id = self._getRegionID(region);
 
-                    region_ticks[id] = tick_data;
+                    var region_start_on_screen = viewport._getScaleLocationFromCoordinate(region.start);
+                    var region_end_on_screen = viewport._getScaleLocationFromCoordinate(region.end);
+
+                    var scale =  d3.scale
+                        .linear()
+                        .domain([region.start, region.end])
+                        .range([region_start_on_screen, region_end_on_screen]);
+
+                    var num_ticks = Math.floor((region_end_on_screen - region_start_on_screen) / 100);
+                    var ticks = scale.ticks(num_ticks);
+
+                    region_ticks[id] = _.map(ticks, function(tick_coordinate) {
+                        return {
+                            tick_text: tick_coordinate,
+                            x: scale(tick_coordinate)
+                        };
+                    });
                 });
 
             this.region_ticks = region_ticks;
@@ -65,6 +79,9 @@ function(
             var self = this,
                 ctx = this._getRenderingContext();
 
+            ctx.svg.selectAll(".region.exon .location-tick")
+                .remove();
+
             ctx.svg.selectAll(".region.exon")
                 .each(function() {
                     // Tick locations
@@ -83,7 +100,6 @@ function(
                     // Tick marks
                     tick_g
                         .append("svg:line")
-                        //.attr("class", "location-tick")
                         .attr("y1", 0)
                         .attr("y2", self.config.tick_height)
                         .style("stroke", "lightgray");
@@ -140,15 +156,24 @@ function(
         // Rendering API //
         ///////////////////
         draw: function() {
-            this._buildScales();
-
             this._applySVG();
-            this._renderExon();
-            this._renderNonCoding();
+
+            this.render();
         },
 
         render: function() {
-            var ctx = this._getRenderingContext();
+            var ctx = this._getRenderingContext(),
+                scale = ctx.getViewport().getViewportScale();
+
+            // Generate new ticks only if viewport zoom has changed since last render
+            if (scale != this.current_scale) {
+                this._buildScales();
+
+                this._renderExon();
+                this._renderNonCoding();
+
+                this.current_scale = scale;
+            }
 
             ctx.svg.attr("transform", function() {
                 return "translate(" + ctx.getViewportPosition().x + ",0)";
@@ -160,6 +185,7 @@ function(
         create: function() {
             var obj = Object.create(LocationDisplayTrackPrototype, {});
             obj.config = {};
+            obj.init();
             return obj;
         }
     }
