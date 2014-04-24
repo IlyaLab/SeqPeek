@@ -7,22 +7,33 @@ function (
 ) {
     var prototype = {
         _getCoordinateFromScaleLocation: function(x) {
-            return this.region_layout.getCoordinateFromScreenLocation(x) / this.viewport_scale;
+            return this.region_layout.getCoordinateFromScaleLocation(x);
         },
 
         _getScaleLocationFromCoordinate: function(coordinate) {
-            return this.region_layout.getScreenLocationFromCoordinate(coordinate) * this.viewport_scale;
+            return this.region_layout.getScaleLocationFromCoordinate(coordinate);
+        },
+
+        _getCoordinateFromScreenLocation: function(x) {
+            return this.region_layout.getCoordinateFromScaleLocation(x / this.viewport_scale);
+        },
+
+        _getScreenLocationFromCoordinate: function(coordinate) {
+            return this.region_layout.getScaleLocationFromCoordinate(coordinate) * this.viewport_scale;
         },
 
         _getVisibleCoordinates: function() {
             // Calculate the coordinate range that is visible on the screen
-            var start_x = -this.viewport_pos.x,
-                regions_width = this.region_layout.metadata.total_width,
-                min_x = d3.max([start_x, 0]),
-                // TODO fix
-                max_x = regions_width;
+            var start_x = -this.viewport_pos.x;
+            var regions_width = this.region_layout.metadata.total_width;
+            var offset = d3.max([this.width - regions_width, 0]);
+            // First visible scale location, in screen coordinates
+            var min_x = d3.max([start_x, 0]);
+            // Last visible scale location
+            var max_x = d3.min([regions_width, start_x + offset + regions_width / this.viewport_scale]);
 
-            var start = this._getCoordinateFromScaleLocation(min_x);
+            // Use _getCoordinateFromScreenLocation, because min_x is in screen coordinates
+            var start = this._getCoordinateFromScreenLocation(min_x);
             var end = this._getCoordinateFromScaleLocation(max_x);
 
             if (start < this.region_metadata.start_coordinate) {
