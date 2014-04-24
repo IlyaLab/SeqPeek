@@ -63,6 +63,7 @@ function(
 
             this.vis.zoom = d3.behavior.zoom()
                 .translate(this.vis.viewport_pos)
+                .scaleExtent([0.5, Infinity])
                 .scale(this.vis.viewport_scale[0])
                 .on("zoom", function() {
                     _.bind(self._zoomEventHandler, self, {}, true)();
