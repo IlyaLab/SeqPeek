@@ -102,7 +102,7 @@ function (
             GeneRegionUtils.iterateDataWithRegions(this.region_data, visible_data_points, location_accessor, function(d) {
                 var location = location_accessor(d.data);
 
-                var stem_location = viewport._getScaleLocationFromCoordinate(location),
+                var stem_location = viewport._getScreenLocationFromCoordinate(location),
                     group_width,
                     type_scale,
                     left_edge;
