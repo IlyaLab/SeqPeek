@@ -39,8 +39,8 @@ function(
 
             _.each(data, function(match) {
                 _.each(match.locations, function(location) {
-                    var screen_x0 = ctx.getRegionLayout().getScreenLocationFromCoordinate(location.start),
-                        screen_x1 = ctx.getRegionLayout().getScreenLocationFromCoordinate(location.end);
+                    var screen_x0 = ctx.getRegionLayout().getScaleLocationFromCoordinate(location.start),
+                        screen_x1 = ctx.getRegionLayout().getScaleLocationFromCoordinate(location.end);
 
                     render_data.push(_.extend(match, location, {
                         screen_x0: screen_x0,

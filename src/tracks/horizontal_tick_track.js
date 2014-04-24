@@ -26,8 +26,8 @@ function(
                     return region.type == 'exon';
                 })
                 .each(function(region) {
-                    var region_start_on_screen = viewport._getScaleLocationFromCoordinate(region.start);
-                    var region_end_on_screen = viewport._getScaleLocationFromCoordinate(region.end);
+                    var region_start_on_screen = viewport._getScreenLocationFromCoordinate(region.start);
+                    var region_end_on_screen = viewport._getScreenLocationFromCoordinate(region.end);
 
                     var scale = d3.scale
                         .linear()

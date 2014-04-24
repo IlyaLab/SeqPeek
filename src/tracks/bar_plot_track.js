@@ -96,11 +96,9 @@ function(
             var stem_rendering_data = [];
 
             GeneRegionUtils.iterateDataWithRegions(this.region_data, this.visible_data, 'coordinate', function(d) {
-                var region = d.region;
-
                 DataAdapters.apply_to_variant_types([d.data], function(type_data, memo, location_data) {
                     var coordinate = location_data.coordinate,
-                        stem_start_x = viewport._getScaleLocationFromCoordinate(coordinate) + viewport_x,
+                        stem_start_x = viewport._getScreenLocationFromCoordinate(coordinate) + viewport_x,
                         stem_end_x = variant_layout.getScreenLocationForVariant(coordinate, type_data) + viewport_x;
 
                     stem_rendering_data.push({
