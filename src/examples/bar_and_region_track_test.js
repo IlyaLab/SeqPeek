@@ -122,7 +122,7 @@ function (
         }
     };
 
-    var test_function = function(target_el) {
+    var test_function = function(target_el, $testdiv) {
         var data_points = TestUtils.generate_test_data([
             // Coding
             [9, 900, 'AB', 'false'],
@@ -305,6 +305,16 @@ function (
         lollipop_track_svg.attr("height", d3.sum(sample_track_heights));
 
         seqpeek.render();
+
+        // Bind buttons
+        $testdiv.find("#enable-zoom").on("click", function() {
+            seqpeek.toggleZoomMode();
+        });
+
+        $testdiv.find("#enable-selection").on("click", function() {
+            seqpeek.toggleSelectionMode();
+        });
+
     };
 
     var test_obj = Object.create(SeqPeekTestPrototype, {});

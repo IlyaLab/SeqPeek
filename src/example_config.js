@@ -75,6 +75,6 @@ require([
     _.each(testlist, function(test) {
         var $testdiv = $(TestTemplate(test)).insertAfter('#test_container');
         var test_target_el = $testdiv.find('#test_target')[0];
-        test.test_function(test_target_el);
+        test.test_function(test_target_el, $testdiv);
     });
 });
