@@ -9,6 +9,9 @@ function(
     vq,
     _
 ) {
+    var BRUSH_COLOR = "#EEEEEE";
+    var BRUSH_STROKE_COLOR = "red";
+
     var SeqPeekContextPrototype = {
         _getVisualizationSize: function() {
             return {
@@ -86,8 +89,8 @@ function(
                 .attr("y", 0)
                 .attr("width", this.vis.viewport_size[0])
                 .attr("height", this.vis.viewport_size[1])
-                .style("fill-opacity", 0.0)
-                .call(this.vis.zoom);
+                .style("fill-opacity", 0.0);
+                //.call(this.vis.zoom);
 
             this.render();
         },
@@ -195,6 +198,80 @@ function(
             return this;
         },
 
+        brush_callback: function(value) {
+            this.config.brush_callback = value;
+
+            return this;
+        },
+
+        /////////////////////////////
+        // Brush / Selection logic //
+        /////////////////////////////
+        _setupBrush: function() {
+            var self = this,
+                brush_height = this.vis.size_info.height;
+
+            if (! this.data.track.supportsSelection()) {
+                return;
+            }
+
+            this.brush = d3.svg.brush()
+                .x(d3.scale.identity().domain([0, this.config.dimensions.width]))
+                .on("brushstart", function() {
+                    // "this" refers to the brush g-element
+                    _.bind(self._brushStart, self)(this);
+                })
+                .on("brush", function() {
+                    // "this" refers to the brush g-element
+                    _.bind(self._brushMove, self)(this);
+                })
+                .on("brushend", function() {
+                    // "this" refers to the brush g-element
+                    _.bind(self._brushEnd, self)(this);
+                });
+
+            this.vis.brush_g = this.vis.root.append("g")
+                .attr("class", "brush");
+
+            this.vis.brush_g
+                .call(this.brush)
+                .selectAll("rect")
+                    .attr("height", brush_height);
+        },
+
+
+        _updateBrushExtent: function(extent) {
+            var brush = this.brush;
+
+            if (! this.config.brush_update_enabled ||
+                ! this.data.track.supportsSelection()) {
+                return;
+            }
+
+            this.vis.brush_g.call(brush.extent([extent["x0"], extent["x1"]]));
+        },
+
+        _brushStart: function() {
+            this.config.brush_update_enabled = false;
+        },
+
+        _brushMove: function(brush_g) {
+            var extent = d3.event.target.extent();
+            var x0 = extent[0];
+            var x1 = extent[1];
+
+            if (this.config.brush_callback != null) {
+                this.config.brush_callback({
+                    x0: x0,
+                    x1: x1
+                });
+            }
+        },
+
+        _brushEnd: function() {
+            this.config.brush_update_enabled = true;
+        },
+
         ///////////////////
         // Rendering API //
         ///////////////////
@@ -208,6 +285,23 @@ function(
                 .attr("class", "seqpeek-track");
 
             this.data.track.draw();
+
+            this._setupBrush();
+        },
+
+        /////////////////////////////////
+        // Zoom / Selection toggle API //
+        /////////////////////////////////
+
+        toggleZoomMode: function() {
+            this.vis.data_area
+                .style("pointer-events", "all");
+        },
+
+        toggleSelectionMode: function() {
+            // Disable zoom events
+            this.vis.data_area
+                .style("pointer-events", "none");
         }
     };
 
@@ -227,7 +321,10 @@ function(
         createIntoSVG: function(target_svg) {
             var obj = Object.create(SeqPeekContextPrototype, {});
 
-            obj.config = { };
+            obj.config = {
+                brush_callback: null,
+                brush_update_enabled: true
+            };
 
             obj.initSVG(target_svg);
 

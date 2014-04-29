@@ -270,6 +270,7 @@ function (
                 .track(track_instance)
                 .width(self.config.viewport.width)
                 .scroll_handler(self.scroll_handler)
+                .brush_callback(self.selection_handler)
                 .region_layout(self.region_layout)
                 .viewport(self.viewport);
         },
@@ -295,6 +296,7 @@ function (
                 .track(track_instance)
                 .width(self.config.viewport.width)
                 .scroll_handler(self.scroll_handler)
+                .brush_callback(self.selection_handler)
                 .viewport(self.viewport)
                 .region_layout(self.region_layout);
         },
@@ -371,22 +373,30 @@ function (
         },
 
         _initScrollHandler: function() {
-            var self = this;
-            this.scroll_handler = function(event) {
-                self.viewport.setViewportPosition({
+            this.scroll_handler = _.bind(function(event) {
+                this.viewport.setViewportPosition({
                     x: event.translate[0],
                     y: 0
                 });
 
-                self.viewport.setViewportScale(event.scale);
+                this.viewport.setViewportScale(event.scale);
 
-                self.variant_layout.doLayoutForViewport(self.viewport, 'coordinate');
+                this.variant_layout.doLayoutForViewport(this.viewport, 'coordinate');
 
-                _.each(self.tracks_array, function(track_info) {
+                _.each(this.tracks_array, function(track_info) {
                     var context = track_info.context;
                     _.bind(context._updateViewportTranslation, context)();
                 });
-            };
+            }, this);
+        },
+
+        _initSelectionHandler: function() {
+            this.selection_handler = _.bind(function(brush_extent) {
+                _.each(this.tracks_array, function(track_info) {
+                    var context = track_info.context;
+                    _.bind(context._updateBrushExtent, context)(brush_extent);
+                });
+            }, this);
         },
 
         ////////////////
@@ -492,6 +502,7 @@ function (
             this._initViewport();
 
             this._initScrollHandler();
+            this._initSelectionHandler();
 
             this._initTrackContexts();
 
@@ -507,6 +518,20 @@ function (
         draw: function() {
             this.createInstances();
             this.render();
+        },
+
+        /////////////////////////////////
+        // Zoom / Selection toggle API //
+        /////////////////////////////////
+
+        toggleZoomMode: function() {
+
+        },
+
+        toggleSelectionMode: function() {
+            _.each(this.tracks_array, function(track_info) {
+                track_info.context.toggleSelectionMode();
+            });
         }
     };
 
