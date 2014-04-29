@@ -81,7 +81,7 @@ function(
                 .style("pointer-events", "all");
 
             // Rectangle for mouse events
-            this.vis.root
+            this.vis.zoom_rect = this.vis.root
                 .selectAll(".data-area")
                 .append("svg:rect")
                 .attr("class", "zoom-rect")
@@ -89,8 +89,8 @@ function(
                 .attr("y", 0)
                 .attr("width", this.vis.viewport_size[0])
                 .attr("height", this.vis.viewport_size[1])
-                .style("fill-opacity", 0.0);
-                //.call(this.vis.zoom);
+                .style("fill-opacity", 0.0)
+                .call(this.vis.zoom);
 
             this.render();
         },
@@ -237,6 +237,8 @@ function(
                 .call(this.brush)
                 .selectAll("rect")
                     .attr("height", brush_height);
+
+            this.toggleZoomMode();
         },
 
 
@@ -294,14 +296,27 @@ function(
         /////////////////////////////////
 
         toggleZoomMode: function() {
-            this.vis.data_area
+            if (this.data.track.supportsSelection()) {
+                this.brush.clear();
+                this.vis.brush_g.call(this.brush);
+
+                this.vis.brush_g
+                    .style("pointer-events", "none");
+            }
+
+            this.vis.zoom_rect
                 .style("pointer-events", "all");
         },
 
         toggleSelectionMode: function() {
             // Disable zoom events
-            this.vis.data_area
+            this.vis.zoom_rect
                 .style("pointer-events", "none");
+
+            if (this.data.track.supportsSelection()) {
+                this.vis.brush_g
+                    .style("pointer-events", "all");
+            }
         }
     };
 
