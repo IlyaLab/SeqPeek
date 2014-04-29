@@ -187,6 +187,13 @@ function(
             return this;
         },
 
+        ///////////////
+        // Brush API //
+        ///////////////
+        supportsSelection: function() {
+            return this._brushinfo.supportsbrush;
+        },
+
         ///////////////////
         // Rendering API //
         ///////////////////
@@ -211,6 +218,9 @@ function(
     return {
         create: function() {
             var track = Object.create(ProteinDomainTrackPrototype, {});
+            track._brushinfo = {
+                supportsbrush: true
+            };
             track.config = {
                 hovercard: {
                     enable: false,

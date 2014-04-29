@@ -116,6 +116,13 @@ function(
             return this;
         },
 
+        ///////////////
+        // Brush API //
+        ///////////////
+        supportsSelection: function() {
+            return this._brushinfo.supportsbrush;
+        },
+
         ///////////////////
         // Rendering API //
         ///////////////////
@@ -146,6 +153,9 @@ function(
     return {
         create: function() {
             var obj = Object.create(LocationDisplayTrackPrototype, {});
+            obj._brushinfo = {
+                supportsbrush: true
+            };
             obj.config = {};
             obj.init();
             return obj;

@@ -142,6 +142,12 @@ function(
 
             return this;
         },
+        ///////////////
+        // Brush API //
+        ///////////////
+        supportsSelection: function() {
+            return false;
+        },
 
         ///////////////////
         // Rendering API //
