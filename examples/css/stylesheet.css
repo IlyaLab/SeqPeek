@@ -16,38 +16,12 @@ input.typeahead {
     width: 180px;
 }
 
-.mutation.substitution {
-    fill: red;
-}
-
-.mutation.possible-slice5-subst {
-    fill: green;
-}
-
-.mutation.frame_shift {
-    fill: gold;
-}
-
-.mutation.missense {
-    fill: blue;
-}
-
-.mutation.NA {
-    fill: lightgray;
-}
-
-.match.PFAM {
-    fill: #aaaaaa;
-}
-
-.match.SMART {
-    fill: #787878;
-}
-
-.match.PROFILE {
-    fill: #c7c7c7;
-}
-
 .hovercard {
-    line-height: 1.25em
+    line-height: 1.25em;
+}
+
+.brush .extent {
+    stroke: red;
+    fill: #EEEEEE;
+    opacity: 0.5;
 }
