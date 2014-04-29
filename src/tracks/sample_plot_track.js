@@ -17,10 +17,6 @@ function(
     SeqPeekTrackPrototype
 ) {
     var SamplePlotTrackPrototype = {
-        getHeight: function() {
-            return this.dimensions.height;
-        },
-
         setHeightFromStatistics: function() {
             var height = this.statistics.max_samples_in_location * this.config.glyph_width + this.config.stem_height;
             this.dimensions.height = height;
