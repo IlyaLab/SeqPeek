@@ -5,20 +5,20 @@ define   (
 
     '../util/data_adapters',
     '../util/gene_region_utils',
-    '../seqpeek_scaling'
+    '../seqpeek_scaling',
+
+    './track_prototype'
 ],
 function(
     d3,
     _,
     DataAdapters,
     GeneRegionUtils,
-    ScalingFunctions
+    ScalingFunctions,
+
+    SeqPeekTrackPrototype
 ) {
     var BarPlotTrackPrototype = {
-        getHeight: function() {
-            return this.dimensions.height;
-        },
-
         setHeightFromStatistics: function() {
             var bar_heights = [];
             DataAdapters.apply_to_variant_types(this.location_data, function(type_data, memo) {
@@ -118,12 +118,6 @@ function(
             return this.config.variant_layout;
         },
 
-        guid: function(value) {
-            this.config.guid = value;
-
-            return this;
-        },
-
         hovercard_config: function(value) {
             this.config.hovercard.config = value;
 
@@ -155,14 +149,6 @@ function(
 
         color_scheme: function(value) {
             this.config.color_scheme = value;
-
-            return this;
-        },
-
-        height: function(height) {
-            this.dimensions = {
-                height: height
-            };
 
             return this;
         },
@@ -316,9 +302,12 @@ function(
         }
     };
 
+    var track_proto = Object.create(SeqPeekTrackPrototype);
+    _.extend(track_proto, BarPlotTrackPrototype);
+
     return {
         create: function(config) {
-            var track = Object.create(BarPlotTrackPrototype, {});
+            var track = Object.create(track_proto, {});
             track.config = {
                 hovercard: {
                     enable: false

@@ -4,13 +4,17 @@ define   (
     'underscore',
 
     '../util/data_adapters',
-    '../util/gene_region_utils'
+    '../util/gene_region_utils',
+
+    './track_prototype'
 ],
 function(
     d3,
     _,
     DataAdapters,
-    GeneRegionUtils
+    GeneRegionUtils,
+
+    SeqPeekTrackPrototype
 ) {
     var SamplePlotTrackPrototype = {
         getHeight: function() {
@@ -135,14 +139,6 @@ function(
             return this;
         },
 
-        height: function(height) {
-            this.dimensions = {
-                height: height
-            };
-
-            return this;
-        },
-
         glyph_width: function(value) {
             this.config.glyph_width = value;
 
@@ -157,12 +153,6 @@ function(
 
         variant_layout: function(layout_object) {
             this.config.variant_layout = layout_object;
-
-            return this;
-        },
-
-        guid: function(value) {
-            this.config.guid = value;
 
             return this;
         },
@@ -308,9 +298,12 @@ function(
         }
     };
 
+    var track_proto = Object.create(SeqPeekTrackPrototype);
+    _.extend(track_proto, SamplePlotTrackPrototype);
+
     return {
         create: function(config) {
-            var track = Object.create(SamplePlotTrackPrototype, {});
+            var track = Object.create(track_proto, {});
             track.config = {
                 hovercard: {
                     enable: false

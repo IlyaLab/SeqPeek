@@ -2,18 +2,18 @@ define   (
 [
     'd3',
     'underscore',
-    'vq'
+    'vq',
+
+    './track_prototype'
 ],
 function(
     d3,
     _,
-    vq
+    vq,
+
+    SeqPeekTrackPrototype
 ) {
     var ProteinDomainTrackPrototype = {
-        getHeight: function() {
-            return this.dimensions.height;
-        },
-
         _buildRenderData: function() {
             var self = this,
                 data = this.config.domain_data,
@@ -129,14 +129,6 @@ function(
             return this;
         },
 
-        height: function(height) {
-            this.dimensions = {
-                height: height
-            };
-
-            return this;
-        },
-
         domain_height: function(value) {
             this.config.domain_height = value;
 
@@ -157,12 +149,6 @@ function(
 
         source_order: function(value) {
             this.config.source_order = value;
-
-            return this;
-        },
-
-        guid: function(value) {
-            this.config.guid = value;
 
             return this;
         },
@@ -215,9 +201,12 @@ function(
         }
     };
 
+    var track_proto = Object.create(SeqPeekTrackPrototype);
+    _.extend(track_proto, ProteinDomainTrackPrototype);
+
     return {
         create: function() {
-            var track = Object.create(ProteinDomainTrackPrototype, {});
+            var track = Object.create(track_proto, {});
             track._brushinfo = {
                 supportsbrush: true
             };

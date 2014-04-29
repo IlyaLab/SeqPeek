@@ -1,17 +1,16 @@
 define   (
 [
     'd3',
-    'underscore'
+    'underscore',
+
+    './track_prototype'
 ],
 function(
     d3,
-    _
+    _,
+    SeqPeekTrackPrototype
 ) {
     var RegionTrackPrototype = {
-        getHeight: function() {
-            return this.dimensions.height;
-        },
-
         _buildHovercardHandler: function() {
             var handler_params = _.extend(this.config.hovercard.config, {
                 canvas_id: this.config.guid,
@@ -109,20 +108,6 @@ function(
             return this;
         },
 
-        height: function(height) {
-            this.dimensions = {
-                height: height
-            };
-
-            return this;
-        },
-
-        guid: function(value) {
-            this.config.guid = value;
-
-            return this;
-        },
-
         hovercard_config: function(value) {
             this.config.hovercard.config = value;
 
@@ -171,9 +156,12 @@ function(
         }
     };
 
+    var track_proto = Object.create(SeqPeekTrackPrototype);
+    _.extend(track_proto, RegionTrackPrototype);
+
     return {
         create: function() {
-            var track = Object.create(RegionTrackPrototype, {});
+            var track = Object.create(track_proto, {});
             track.config = {
                 hovercard: {
                     enable: false,

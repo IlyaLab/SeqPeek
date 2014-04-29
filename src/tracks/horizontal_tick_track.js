@@ -1,19 +1,18 @@
 define (
 [
     'd3',
-    'underscore'
+    'underscore',
+
+    './track_prototype'
 ],
 function(
     d3,
-    _
+    _,
+    SeqPeekTrackPrototype
 ) {
-    var LocationDisplayTrackPrototype = {
+    var LocationDisplayTrackPrototype = Object.create({
         init: function() {
             this.current_scale = null;
-        },
-
-        getHeight: function() {
-            return this.dimensions.height;
         },
 
         _buildScales: function() {
@@ -96,14 +95,6 @@ function(
             return this;
         },
 
-        height: function(height) {
-            this.dimensions = {
-                height: height
-            };
-
-            return this;
-        },
-
         tick_height: function(height) {
             this.config.tick_height = height;
 
@@ -148,11 +139,14 @@ function(
                 return "translate(" + ctx.getViewportPosition().x + ",0)";
             });
         }
-    };
+    });
+
+    var track_proto = Object.create(SeqPeekTrackPrototype);
+    _.extend(track_proto, LocationDisplayTrackPrototype);
 
     return {
         create: function() {
-            var obj = Object.create(LocationDisplayTrackPrototype, {});
+            var obj = Object.create(track_proto, {});
             obj._brushinfo = {
                 supportsbrush: true
             };
