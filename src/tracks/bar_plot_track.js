@@ -272,13 +272,6 @@ function(
                 .attr("d", diagonal);
         },
 
-        ///////////////
-        // Brush API //
-        ///////////////
-        supportsSelection: function() {
-            return false;
-        },
-
         ///////////////////
         // Rendering API //
         ///////////////////

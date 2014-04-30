@@ -173,13 +173,6 @@ function(
             return this;
         },
 
-        ///////////////
-        // Brush API //
-        ///////////////
-        supportsSelection: function() {
-            return this._brushinfo.supportsbrush;
-        },
-
         ///////////////////
         // Rendering API //
         ///////////////////
