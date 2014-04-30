@@ -277,7 +277,14 @@ function (
                 variant_width: 5.0
             },
             variant_data_location_field: 'coordinate',
-            variant_data_type_field: 'variant_type'
+            variant_data_type_field: 'variant_type',
+            selection_handler: function(ids) {
+                console.log(ids);
+            },
+            variant_data_source_field: function(data_point) {
+                return data_point["protein_loc"] + "-" +
+                    data_point["variant_type"];
+            }
         });
 
         seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg, {
@@ -314,7 +321,6 @@ function (
         $testdiv.find("#enable-selection").on("click", function() {
             seqpeek.toggleSelectionMode();
         });
-
     };
 
     var test_obj = Object.create(SeqPeekTestPrototype, {});
