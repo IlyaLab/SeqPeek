@@ -47,6 +47,31 @@ function (
             return [start, end];
         },
 
+        getCoordinateRangeForExtent: function(extent) {
+            // Calculate the coordinate range that is visible on the screen
+            var start_x = -this.viewport_pos.x + extent.x0;
+            var end_x = -this.viewport_pos.x + extent.x1;
+            var regions_width = this.region_layout.metadata.total_width;
+
+            // First visible scale location, in screen coordinates
+            var min_x = d3.max([start_x, 0]);
+            // Last visible scale location
+            var max_x = d3.min([regions_width * this.viewport_scale, end_x]);
+
+            var start = this._getCoordinateFromScreenLocation(min_x);
+            var end = this._getCoordinateFromScreenLocation(max_x);
+
+            if (start < this.region_metadata.start_coordinate) {
+                start = this.region_metadata.start_coordinate;
+            }
+
+            if (end > this.region_metadata.end_coordinate) {
+                end = this.region_metadata.end_coordinate;
+            }
+
+            return [start, end];
+        },
+
         getViewportPosition: function() {
             return this.viewport_pos;
         },

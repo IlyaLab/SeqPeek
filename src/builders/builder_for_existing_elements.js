@@ -176,6 +176,8 @@ function (
             this.scroll_handler = null;
 
             this.variant_layout = null;
+
+            this.variant_source_accessor = DataAdapters.make_accessor(this.config.variant_data_source_field);
         },
 
         _initRegionLayout: function() {
@@ -392,10 +394,18 @@ function (
 
         _initSelectionHandler: function() {
             this.selection_handler = _.bind(function(brush_extent) {
+                this.brush_extent = brush_extent;
+
                 _.each(this.tracks_array, function(track_info) {
                     var context = track_info.context;
                     _.bind(context._updateBrushExtent, context)(brush_extent);
                 });
+
+                if (_.isFunction(this.config.selection_handler)) {
+                    var unique_identifiers = this.getSelectedSampleIDs();
+                    this.config.selection_handler(unique_identifiers);
+                }
+
             }, this);
         },
 
@@ -496,6 +506,43 @@ function (
             return heights;
         },
 
+        getSelectedSampleIDs: function() {
+            var self = this;
+
+            if (this.brush_extent === undefined) {
+                return;
+            }
+
+            // Map brush extent to coordinates
+            var coordinate_extent = this.viewport.getCoordinateRangeForExtent(this.brush_extent);
+            var start = parseInt(coordinate_extent[0]);
+            var end = parseInt(coordinate_extent[1]);
+
+            var identifier_list = [];
+
+            // Find unique data point identifiers
+            _.chain(this.tracks_array)
+
+                .filter(function(track_info) {
+                    return track_info["type"] == "sample_plot" ||
+                        track_info["type"] == "bar_plot";
+                })
+                .each(function(track_info) {
+                    DataAdapters.apply_to_variant_types(track_info.data, function(type_data, memo, data_by_location)  {
+                        var coordinate = data_by_location.coordinate;
+
+                        if (start <= coordinate && coordinate <= end) {
+                            _.each(type_data.data, function (data_point) {
+                                var identifier = self.variant_source_accessor(data_point);
+                                identifier_list.push(identifier);
+                            });
+                        }
+                    });
+                });
+
+            return _.uniq(identifier_list);
+        },
+
         createInstances: function() {
             this._initRegionLayout();
             this._initVariantLayout();
@@ -525,7 +572,9 @@ function (
         /////////////////////////////////
 
         toggleZoomMode: function() {
-
+            _.each(this.tracks_array, function(track_info) {
+                track_info.context.toggleZoomMode();
+            });
         },
 
         toggleSelectionMode: function() {
