@@ -42,6 +42,10 @@ function(
                     category_colors: self.config.color_scheme
                 });
 
+            if (this.config.max_samples_in_location !== undefined) {
+                render_info.max_samples_in_location = this.config.max_samples_in_location;
+            }
+
             DataAdapters.apply_to_variant_types(data, function(type_data, memo) {
                 type_data.render_data = scaling_function(type_data.statistics.by_category, self.statistics, category_totals, render_info, type_data);
             });
@@ -176,6 +180,12 @@ function(
         //////////////
         category_totals: function() {
             this.config.category_totals = arguments[0];
+
+            return this;
+        },
+
+        max_samples_in_location: function() {
+            this.config.max_samples_in_location = arguments[0];
 
             return this;
         },
