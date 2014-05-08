@@ -73,10 +73,11 @@ function(
 
     var _createLog2Bars = function(samples_by_categories, track_statistics, category_totals, render_info, type_data) {
         var category_max_height = render_info.max_height / _.keys(samples_by_categories).length;
+        var max_samples_in_location = render_info.max_samples_in_location || track_statistics.max_samples_in_location;
 
         var log_scale = d3.scale
             .log().base([2])
-            .domain([1.0, track_statistics.max_samples_in_location])
+            .domain([1.0, max_samples_in_location])
             .range([5, category_max_height]);
 
         var bars = _.reduce(_.keys(samples_by_categories), function(memo, group_name) {
