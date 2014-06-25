@@ -37,7 +37,7 @@ function (
                 screen_location_to_coordinate_domain = [0],
                 screen_location_to_coordinate_range = [];
 
-            _.each(region_data, function(region) {
+            _.each(region_data, function(region, index, region_array) {
                 var start = isNaN(region.start) ? 0 : region.start,
                     region_end = region.end;
 
@@ -52,7 +52,7 @@ function (
                         width = region_end - start;
                     }
                     else if (_.isFunction(width_config)) {
-                        width = width_config(start, region_end);
+                        width = width_config(region, index, region_array);
                     }
                     else {
                         width = width_config;

@@ -88,13 +88,20 @@ function(
         },
 
         buildRegionsFromArray: function(param_regions) {
+            var RESERVED_FIELDS = ['type', 'data', 'start', 'end', 'belongs'];
+
             return _.map(param_regions, function(region_info) {
+                var region;
                 if (region_info.type == 'noncoding') {
-                    return build_noncoding_region(region_info.start, region_info.end);
+                    region = build_noncoding_region(region_info.start, region_info.end);
                 }
                 else if (region_info.type == 'exon') {
-                    return build_exon_region(region_info.start, region_info.end);
+                    region = build_exon_region(region_info.start, region_info.end);
                 }
+
+                _.extend(region, _.omit(region_info, RESERVED_FIELDS));
+
+                return region;
             });
         },
 
