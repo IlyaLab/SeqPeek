@@ -32,6 +32,9 @@ function (
             // Last visible scale location
             var max_x = d3.min([regions_width, start_x + offset + regions_width / this.viewport_scale]);
 
+            this.visible_min_x = min_x;
+            this.visible_max_x = max_x;
+
             // Use _getCoordinateFromScreenLocation, because min_x is in screen coordinates
             var start = this._getCoordinateFromScreenLocation(min_x);
             var end = this._getCoordinateFromScaleLocation(max_x);

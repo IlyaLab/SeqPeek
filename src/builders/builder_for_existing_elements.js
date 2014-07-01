@@ -211,7 +211,8 @@ function (
 
         _initVariantLayout: function() {
             var self = this,
-                config = _.extend(DEFAULT_VARIANT_LAYOUT_CONFIG, this.config.variant_layout);
+                config = _.extend(DEFAULT_VARIANT_LAYOUT_CONFIG, this.config.variant_layout),
+                location_field_name = this.config.variant_data_location_field;
 
             this.variant_layout = VariantLayoutFactory.create({});
 
@@ -223,7 +224,7 @@ function (
                 .location_field(this.config.variant_data_location_field)
                 .variant_type_field(this.config.variant_data_type_field)
                 .regions(this.region_data)
-                .processFlatArray('coordinate');
+                .processFlatArray(location_field_name);
 
             _.each(config, function(value, function_key) {
                 self.variant_layout[function_key](value);
@@ -389,6 +390,16 @@ function (
                     var context = track_info.context;
                     _.bind(context._updateViewportTranslation, context)();
                 });
+
+                if (this.config.scrollEventCallback !== undefined) {
+                    this.config.scrollEventCallback({
+
+                        viewport_x:  event.translate[0],
+                        viewport_scale: event.scale,
+                        visible_min_x: this.viewport.visible_min_x,
+                        visible_max_x: this.viewport.visible_max_x
+                    });
+                }
             }, this);
         },
 
@@ -417,6 +428,11 @@ function (
                 location_field_name = this.config.variant_data_location_field;
 
             var track_data = DataAdapters.group_by_location(variant_array, type_field_name, location_field_name);
+
+            track_data.sort(function(x, y) {
+                return (x["coordinate"] - y["coordinate"]);
+            });
+
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
             this.variant_layout_data.push({
@@ -440,6 +456,11 @@ function (
                 location_field_name = this.config.variant_data_location_field;
 
             var track_data = DataAdapters.group_by_location(variant_array, type_field_name, location_field_name);
+
+            track_data.sort(function(x, y) {
+                return (x["coordinate"] - y["coordinate"]);
+            });
+
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
             this.variant_layout_data.push({
@@ -481,6 +502,18 @@ function (
                 element: track_container_element,
                 config: track_config
             });
+        },
+
+        scrollEventCallback: function(value) {
+            this.config.scrollEventCallback = value;
+        },
+
+        getProcessedRegionData: function() {
+            return this.region_data;
+        },
+
+        getRegionMetadata: function() {
+            return this.region_metadata
         },
 
         setTrackHeightsByStatistics: function(track_type) {
