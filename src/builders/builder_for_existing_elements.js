@@ -393,11 +393,9 @@ function (
 
                 if (this.config.scrollEventCallback !== undefined) {
                     this.config.scrollEventCallback({
-
                         viewport_x:  event.translate[0],
                         viewport_scale: event.scale,
-                        visible_min_x: this.viewport.visible_min_x,
-                        visible_max_x: this.viewport.visible_max_x
+                        visible_coordinates: this.viewport._getVisibleCoordinates()
                     });
                 }
             }, this);

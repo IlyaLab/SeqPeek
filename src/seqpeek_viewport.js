@@ -26,22 +26,17 @@ function (
             // Calculate the coordinate range that is visible on the screen
             var start_x = -this.viewport_pos.x;
             var regions_width = this.region_layout.metadata.total_width;
-            var offset = d3.max([this.width - regions_width, 0]);
-            // First visible scale location, in screen coordinates
+
             var min_x = d3.max([start_x, 0]);
-            // Last visible scale location
-            var max_x = d3.min([regions_width, start_x + offset + regions_width / this.viewport_scale]);
-
-            this.visible_min_x = min_x;
-            this.visible_max_x = max_x;
-
-            // Use _getCoordinateFromScreenLocation, because min_x is in screen coordinates
             var start = this._getCoordinateFromScreenLocation(min_x);
-            var end = this._getCoordinateFromScaleLocation(max_x);
 
             if (start < this.region_metadata.start_coordinate) {
                 start = this.region_metadata.start_coordinate;
             }
+
+            var offset = d3.max([this.width - regions_width, 0]);
+
+            var end = d3.max([0, this._getCoordinateFromScreenLocation(start_x + regions_width + offset)]);
 
             if (end > this.region_metadata.end_coordinate) {
                 end = this.region_metadata.end_coordinate;
