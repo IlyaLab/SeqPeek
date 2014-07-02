@@ -28,6 +28,12 @@ function(
 
         },
 
+        region_layout: function(region_layout) {
+            this.region_layout = region_layout;
+
+            return this;
+        },
+
         data: function(region_data) {
             this.region_data = region_data;
 
@@ -40,7 +46,7 @@ function(
             return this;
         },
 
-        render: function(min_x, max_x) {
+        render: function(start_coordinate, end_coordinate) {
             var ctx = this.ctx;
             this._clearCanvas();
 
@@ -57,7 +63,7 @@ function(
             }, this);
             this.ctx.restore();
 
-            this._renderViewportExtent(min_x, max_x);
+            this._renderViewportExtent(start_coordinate, end_coordinate);
         },
 
         _clearCanvas: function() {
@@ -101,11 +107,12 @@ function(
             ctx.fill();
         },
 
-        _renderViewportExtent: function(min_x, max_x) {
+        _renderViewportExtent: function(start_coordinate, end_coordinate) {
             var ctx = this.ctx;
             var scale = this.config.scale;
             var adjust = (DEFAULT_VIEWPORT_STROKE_WIDTH / 2.0);
-
+            var min_x = this.region_layout.getScaleLocationFromCoordinate(start_coordinate);
+            var max_x = this.region_layout.getScaleLocationFromCoordinate(end_coordinate);
             var x = scale * min_x + adjust;
             var y = (this.config.height / 2.0) - (DEFAULT_VIEWPORT_HEIGHT / 2.0) - (0.5 * adjust);
             var h = DEFAULT_VIEWPORT_HEIGHT;
