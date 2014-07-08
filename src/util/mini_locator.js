@@ -90,7 +90,7 @@ function(
             ctx.fill();
         },
 
-        _renderNonCoding: function() {
+        _renderNonCoding: function(region) {
             var ctx = this.ctx;
 
             var x = region.layout.screen_x;
