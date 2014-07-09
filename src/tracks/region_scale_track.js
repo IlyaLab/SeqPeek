@@ -34,9 +34,6 @@ function(
                     .append("g")
                     .attr("class", function(d) {
                         return "region " + d.type
-                    })
-                    .attr("transform", function(d) {
-                        return "translate(" + d.layout.screen_x + ",0)";
                     });
 
             if (this.config.hovercard.enable || this.config.hovercard.enable_tools) {
@@ -61,17 +58,19 @@ function(
                         .append("svg:rect")
                         .attr("class", "x-scale")
                         .attr("x", function(d) {
-                            return 0.0;
+                            return self.region_layout.getScaleLocationFromCoordinate(d.start);
                         })
                         .attr("width", function(d) {
-                            return d.layout.screen_width;
+                            var screen_start_x = self.region_layout.getScaleLocationFromCoordinate(d.start);
+                            var screen_end_x = self.region_layout.getScaleLocationFromCoordinate(d.end);
+                            return screen_end_x - screen_start_x;
                         })
                         .attr("y", function(d) {
                             return 0.0;
                         })
                         .attr("height", self.getHeight())
                         .style("fill", "lightgray")
-                        .style("stroke", "lightgray");
+                        .style("stroke-width", 0);
                 });
         },
 
@@ -85,17 +84,19 @@ function(
                         .append("svg:rect")
                         .attr("class", "x-scale")
                         .attr("x", function(d) {
-                            return 0.0;
+                            return self.region_layout.getScaleLocationFromCoordinate(d.start);
                         })
                         .attr("width", function(d) {
-                            return d.layout.screen_width;
+                            var screen_start_x = self.region_layout.getScaleLocationFromCoordinate(d.start);
+                            var screen_end_x = self.region_layout.getScaleLocationFromCoordinate(d.end);
+                            return screen_end_x - screen_start_x;
                         })
                         .attr("y", function(d) {
                             return self.getHeight() / 2.0 - 2.5;
                         })
                         .attr("height", 5.0)
                         .style("fill", "gray")
-                        .style("stroke", "gray");
+                        .style("stroke-width", 0);
                 });
         },
 
@@ -104,6 +105,12 @@ function(
         //////////////
         data: function(region_data) {
             this.region_data = region_data;
+
+            return this;
+        },
+
+        region_layout: function(region_layout) {
+            this.region_layout = region_layout;
 
             return this;
         },
