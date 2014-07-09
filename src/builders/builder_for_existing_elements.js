@@ -282,6 +282,7 @@ function (
             var config = _.extend(DEFAULT_REGION_TRACK_CONFIG, this.config.region_track, track_info.config),
                 track_instance = RegionTrackFactory
                     .create()
+                    .region_layout(this.region_layout)
                     .data(this.region_data);
 
             _.each(config, function(value, function_key) {
@@ -421,7 +422,7 @@ function (
         ////////////////
         // Public API //
         ////////////////
-        addBarPlotTrackWithArrayData: function(variant_array, track_container_element, track_config) {
+        addBarPlotTrackWithArrayData: function(variant_array, track_container_element, track_config, skip_layout) {
             var type_field_name = this.config.variant_data_type_field,
                 location_field_name = this.config.variant_data_location_field;
 
@@ -433,9 +434,11 @@ function (
 
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
-            this.variant_layout_data.push({
-                data_array: variant_array
-            });
+            if (!skip_layout) {
+                this.variant_layout_data.push({
+                    data_array: variant_array
+                });
+            }
 
             var track_info = {
                 type: 'bar_plot',
@@ -449,7 +452,7 @@ function (
             return track_info;
         },
 
-        addSamplePlotTrackWithArrayData: function(variant_array, track_container_element, track_config) {
+        addSamplePlotTrackWithArrayData: function(variant_array, track_container_element, track_config, skip_layout) {
             var type_field_name = this.config.variant_data_type_field,
                 location_field_name = this.config.variant_data_location_field;
 
@@ -461,9 +464,11 @@ function (
 
             DataAdapters.apply_statistics(track_data, function() {return 'all';});
 
-            this.variant_layout_data.push({
-                data_array: variant_array
-            });
+            if (!skip_layout) {
+                this.variant_layout_data.push({
+                    data_array: variant_array
+                });
+            }
 
             var track_info = {
                 type: 'sample_plot',
