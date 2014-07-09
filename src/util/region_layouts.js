@@ -62,21 +62,10 @@ function (
                     width = self.options.noncoding_region_width;
                 }
 
-                var coordinate_scale = d3.scale.linear().domain([start, region_end]).range([current_loc, current_loc + width]);
-                var inverse_scale = d3.scale.linear().domain([0, width]).range([start, region_end]);
-
                 region.layout = {
                     screen_x: current_loc,
                     screen_width: width,
-                    screen_height: 10.0,
-                    coordinate_scale: coordinate_scale,
-                    inverse_scale: inverse_scale,
-                    get_location_in_local_scale: function(coordinate) {
-                        return coordinate_scale(coordinate);
-                    },
-                    get_screen_location_for_coordinate: function(coordinate, rendering_context) {
-                        return coordinate_scale(coordinate) + rendering_context.getViewportPosition()['x'];
-                    }
+                    screen_height: 10.0
                 };
 
                 current_loc = current_loc + width + 1;
