@@ -3,11 +3,14 @@ define   (
     'd3',
     'underscore',
 
+    '../util/data_adapters',
+
     './track_prototype'
 ],
 function(
     d3,
     _,
+    DataAdapters,
     SeqPeekTrackPrototype
 ) {
     var RegionTrackPrototype = {
@@ -69,7 +72,7 @@ function(
                             return 0.0;
                         })
                         .attr("height", self.getHeight())
-                        .style("fill", "lightgray")
+                        .style("fill", self.config.color_scheme('exon'))
                         .style("stroke-width", 0);
                 });
         },
@@ -95,7 +98,7 @@ function(
                             return self.getHeight() / 2.0 - 2.5;
                         })
                         .attr("height", 5.0)
-                        .style("fill", "gray")
+                        .style("fill", self.config.color_scheme('noncoding'))
                         .style("stroke-width", 0);
                 });
         },
@@ -105,6 +108,23 @@ function(
         //////////////
         data: function(region_data) {
             this.region_data = region_data;
+
+            return this;
+        },
+
+        color_scheme: function(value) {
+            if (typeof(value) == "function") {
+                this.config.color_scheme = value;
+            }
+            else if (typeof(value) == "string") {
+                this.config.color_scheme = DataAdapters.make_accessor(color_scheme);
+            }
+            else if (typeof(value) == "object") {
+                var color_map = _.clone(value);
+                this.config.color_scheme = function(d) {
+                    return color_map[d];
+                }
+            }
 
             return this;
         },

@@ -33,8 +33,7 @@ function (
         BAR_PLOT_TRACK_MAX_HEIGHT = 100,
         SAMPLE_PLOT_TRACK_MAX_HEIGHT = 100,
         TICK_TRACK_HEIGHT = 25,
-        REGION_TRACK_HEIGHT = 10,
-        VIEWPORT_WIDTH = 1000;
+        REGION_TRACK_HEIGHT = 10;
 
     var DEFAULT_BAR_PLOT_TRACK_CONFIG = {
         color_scheme: {
@@ -93,11 +92,11 @@ function (
         variant_width: 5.0
     };
 
-    var DEFAULT_VIEWPORT_CONFIG = {
-        width: VIEWPORT_WIDTH
-    };
-
     var DEFAULT_REGION_TRACK_CONFIG = {
+        color_scheme: {
+            'exon': 'lightgray',
+            'noncoding': 'gray'
+        },
         height: REGION_TRACK_HEIGHT,
         hovercard_config: {
             include_header: false,
