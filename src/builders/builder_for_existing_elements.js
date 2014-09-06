@@ -29,8 +29,7 @@ function (
     TickTrackFactory,
     ProteinDomainTrackFactory
 ) {
-    var VERTICAL_PADDING = 10,
-        BAR_PLOT_TRACK_MAX_HEIGHT = 100,
+    var BAR_PLOT_TRACK_MAX_HEIGHT = 100,
         SAMPLE_PLOT_TRACK_MAX_HEIGHT = 100,
         TICK_TRACK_HEIGHT = 25,
         REGION_TRACK_HEIGHT = 10;
@@ -157,7 +156,6 @@ function (
     };
 
     var BuilderForExistingElementsPrototype = {
-
         _initialize: function(config) {
             // Custom configurations
             this.config = config;

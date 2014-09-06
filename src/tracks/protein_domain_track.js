@@ -4,6 +4,8 @@ define   (
     'underscore',
     'vq',
 
+    '../util/data_adapters',
+
     './track_prototype'
 ],
 function(
@@ -11,10 +13,12 @@ function(
     _,
     vq,
 
+    DataAdapters,
+
     SeqPeekTrackPrototype
 ) {
     var ProteinDomainTrackPrototype = {
-        _buildRenderData: function() {
+        _buildDomainRenderData: function() {
             var self = this,
                 data = this.config.domain_data,
                 ctx = this._getRenderingContext(),
@@ -54,6 +58,27 @@ function(
             this.vertical_scale = domain_scale;
         },
 
+        _buildLabelRenderData: function() {
+            var self = this,
+                data = this.config.domain_data,
+                ctx = this._getRenderingContext(),
+                viewport = ctx.getViewport(),
+                viewport_x = ctx.getViewportPosition().x,
+                label_render_data = [];
+
+            _.each(data, function(match) {
+                _.each(match.locations, function(location) {
+                    label_render_data.push({
+                        screen_x: viewport._getScreenLocationFromCoordinate(location.start) + viewport_x,
+                        screen_y: self.vertical_scale(match[self.config.source_key]),
+                        text: self.config.label(match)
+                    });
+                });
+            });
+
+            this.label_render_data = label_render_data;
+        },
+
         _buildHovercardHandler: function() {
             var handler_params = _.extend(this.config.hovercard.config, {
                 canvas_id: this.config.guid,
@@ -72,7 +97,10 @@ function(
                 ctx = this._getRenderingContext(),
                 source_key = this.config.source_key;
 
-            var domains_g = ctx.svg
+            this.domains_g = ctx.svg
+                .append("svg:g");
+
+            this.domains_g
                 .selectAll("rect.domain")
                 .data(this.render_data)
                 .enter()
@@ -95,11 +123,31 @@ function(
             if (this.config.hovercard.enable) {
                 var handler = this._buildHovercardHandler();
 
-                domains_g
+                this.domains_g.selectAll("rect.domain")
                     .each(function() {
                         d3.select(this).on("mouseover", function(d) {
                             handler.call(this, d);
                         });
+                    });
+            }
+
+            if (this.config.label !== null) {
+                this.domain_labels = ctx.svg.selectAll("text.domain-label")
+                    .data(this.label_render_data, function(d) {
+                        return d["text"];
+                    })
+                    .enter()
+                    .append("svg:text")
+                    .attr("class", "domain-label")
+                    .attr("font-size", 15)
+                    .attr("x", function(d) {
+                        return d.screen_x;
+                    })
+                    .attr("y", function(d) {
+                        return d.screen_y + 15;
+                    })
+                    .text(function(d) {
+                        return d.text;
                     });
             }
         },
@@ -117,7 +165,7 @@ function(
             return this;
         },
 
-        regions: function(region_data, param_coordinate_getter) {
+        regions: function(region_data) {
             this.region_data = region_data;
 
             return this;
@@ -131,6 +179,17 @@ function(
 
         domain_height: function(value) {
             this.config.domain_height = value;
+
+            return this;
+        },
+
+        label: function(value) {
+            if (typeof(value) == "function") {
+                this.config.label = value;
+            }
+            else if (typeof(value) == "string") {
+                this.config.label = DataAdapters.make_accessor(color_scheme);
+            }
 
             return this;
         },
@@ -177,20 +236,37 @@ function(
         // Rendering API //
         ///////////////////
         draw: function() {
-            this._buildRenderData();
+            this._buildDomainRenderData();
+
+            if (this.config.label !== null) {
+                this._buildLabelRenderData();
+            }
+
             this._applySVG();
         },
 
         render: function() {
             var ctx = this._getRenderingContext();
 
-            ctx.svg.attr("transform", function() {
+            this.domains_g.attr("transform", function() {
                 var trs =
                     "translate(" + ctx.getViewportPosition().x + ",0)" +
                     "scale(" + ctx.getViewportScale() + ",1)";
 
                 return trs;
             });
+
+            if (this.config.label !== null) {
+                this._buildLabelRenderData();
+
+                ctx.svg.selectAll("text.domain-label")
+                    .data(this.label_render_data, function(d) {
+                        return d["text"];
+                    })
+                    .attr("x", function(d) {
+                        return d.screen_x;
+                    });
+            }
         }
     };
 
@@ -204,6 +280,7 @@ function(
                 supportsbrush: true
             };
             track.config = {
+                label: null,
                 hovercard: {
                     enable: false,
                     enable_tools: false
