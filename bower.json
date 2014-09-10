@@ -3,9 +3,9 @@
     "version": "0.0.0",
     "dependencies": {
         "requirejs": "~2.1.5",
-        "jquery": "~2.0.2",
+        "jquery": "~2.1.1",
         "d3": "~3.2.8",
-        "underscore": "~1.4.4",
+        "underscore": "~1.6.0",
         "font-awesome": "~3.2.1",
         "require-handlebars-plugin": "git://github.com/SlexAxton/require-handlebars-plugin.git#~0.4.0",
         "handlebars": "git://github.com/components/handlebars.js#~1.0.0",
@@ -13,8 +13,5 @@
     },
     "resolutions": {
         "d3": "~3.2.8"
-    },
-    "devDependencies": {
-        
     }
 }

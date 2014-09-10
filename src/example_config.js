@@ -2,7 +2,7 @@ require.config({
     baseUrl: './',
 
     paths: {
-        jquery: './bower_components/jquery/jquery',
+        jquery: './bower_components/jquery/dist/jquery',
         "jQuery-ui": "./bower_components/jquery-ui/ui/jquery-ui",
         backbone: './bower_components/backbone/backbone',
         d3: './bower_components/d3/d3',
