@@ -46,7 +46,8 @@ function(
                     var screen_x0 = ctx.getRegionLayout().getScaleLocationFromCoordinate(location.start),
                         screen_x1 = ctx.getRegionLayout().getScaleLocationFromCoordinate(location.end);
 
-                    render_data.push(_.extend(match, location, {
+                    var cloned_match = _.clone(match);
+                    render_data.push(_.extend(cloned_match, location, {
                         screen_x0: screen_x0,
                         screen_x1: screen_x1,
                         color: self.config.color_scheme[match[source_key]]
@@ -102,7 +103,9 @@ function(
 
             this.domains_g
                 .selectAll("rect.domain")
-                .data(this.render_data)
+                .data(this.render_data, function(d) {
+                    return d.screen_x0 + "-" + d.screen_x1;
+                })
                 .enter()
                 .append("rect")
                 .attr("class", "domain")
@@ -134,7 +137,7 @@ function(
             if (this.config.label !== null) {
                 this.domain_labels = ctx.svg.selectAll("text.domain-label")
                     .data(this.label_render_data, function(d) {
-                        return d["text"];
+                        return d["text"] + "-" + d["screen_x"];
                     })
                     .enter()
                     .append("svg:text")
