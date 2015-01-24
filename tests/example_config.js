@@ -7,8 +7,23 @@ for (var file in window.__karma__.files) {
 
 require.config({
     //baseUrl: './',
-    baseUrl: 'base',
+    baseUrl: 'base/src',
 
+    /*
+    paths: {
+        jquery: '../bower_components/jquery/dist/jquery',
+        //"jQuery-ui": "../bower_components/jquery-ui/ui/jquery-ui",
+        d3: '../bower_components/d3/d3',
+        underscore: '../bower_components/underscore/underscore',
+        "vq" : '../bower_components/visquick/vq',
+        "hbs": "../bower_components/require-handlebars-plugin/hbs",
+        "handlebars" : "../bower_components/require-handlebars-plugin/Handlebars",
+        'json2' : '../bower_components/require-handlebars-plugin/hbs/json2',
+        'i18nprecompile' : '../bower_components/require-handlebars-plugin/hbs/i18nprecompile'
+    },
+    */
+
+    /*
     paths: {
         jquery: 'src/bower_components/jquery/dist/jquery',
         //"jQuery-ui": "../bower_components/jquery-ui/ui/jquery-ui",
@@ -19,6 +34,19 @@ require.config({
         "handlebars" : "src/bower_components/require-handlebars-plugin/Handlebars",
         'json2' : 'src/bower_components/require-handlebars-plugin/hbs/json2',
         'i18nprecompile' : 'src/bower_components/require-handlebars-plugin/hbs/i18nprecompile'
+    },
+    */
+
+    paths: {
+        jquery: './bower_components/jquery/dist/jquery',
+        //"jQuery-ui": "../bower_components/jquery-ui/ui/jquery-ui",
+        d3: './bower_components/d3/d3',
+        underscore: './bower_components/underscore/underscore',
+        "vq" : './bower_components/visquick/vq',
+        "hbs": "./bower_components/require-handlebars-plugin/hbs",
+        "handlebars" : "./bower_components/require-handlebars-plugin/Handlebars",
+        'json2' : './bower_components/require-handlebars-plugin/hbs/json2',
+        'i18nprecompile' : './bower_components/require-handlebars-plugin/hbs/i18nprecompile'
     },
     shim: {
         'underscore' : {
@@ -34,7 +62,7 @@ require.config({
             'exports' : 'd3'
         },
         vq : {
-            'deps' : ['d3', 'underscore'],
+            'deps' : ['d3','underscore'],
             'exports' : 'vq'
         },
         /*

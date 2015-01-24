@@ -4,10 +4,11 @@ var gulp = require('gulp');
 var gutil = require('gulp-util');
 
 var livereload = require('gulp-livereload');
-var connect = require('connect');
-
+var karma = require('karma');
+var karmaParseConfig = require('karma/lib/config').parseConfig;
 var rename = require('gulp-rename');
 var browserify = require('browserify');
+var path = require('path');
 var watchify = require('watchify');
 var source = require('vinyl-source-stream');
 
@@ -21,8 +22,8 @@ var lrPort = 35731;
 var dist = 'dist';
 
 var htmlFiles = [
-    'src/examples/index.html',
-    'src/examples/*js'
+    '/examples/index.html',
+    'src/examples/*.js'
 ];
 
 var devWatchList = [
@@ -35,6 +36,7 @@ var htmlBuild = dist;
 var vendorFiles = [ ];
 var vendorBuild = dist + '/vendor';
 
+var lr = undefined;
 
 gulp.task('vendor', function () {
     return gulp.src(vendorFiles).
@@ -47,6 +49,23 @@ gulp.task('html', function () {
         pipe(gulp.dest(htmlBuild));
 });
 
+function karmaTask(configFilePath, options, cb) {
+    configFilePath = path.resolve(configFilePath);
+
+    var server = karma.server;
+    var log=gutil.log, colors=gutil.colors;
+    var config = karmaParseConfig(configFilePath, {});
+
+    Object.keys(options).forEach(function(key) {
+        config[key] = options[key];
+    });
+
+    server.start(config, function(exitCode) {
+        log('Karma has exited with ' + colors.red(exitCode));
+        cb();
+        process.exit(exitCode);
+    });
+}
 
 function compileScripts(watch) {
     gutil.log('Starting browserify');
@@ -77,14 +96,19 @@ function compileScripts(watch) {
 
 
 gulp.task('server', function (next) {
-    var server = connect();
-    server.use(connect.static(dist)).listen(serverPort, next);
+    var app;
+    app = express();
+    app.use(livereload());
+    app.use(express["static"](express_root));
+    app.listen(express_port);
+    lr = tinylr();
+    lr.listen(livereload_port);
 });
 
 /**
  * Run default task
  */
-gulp.task('default', ['vendor', 'server'], function () {
+gulp.task('default', ['server'], function () {
     var lrServer = livereload(lrPort);
     var reloadPage = function (evt) {
         lrServer.changed(evt.path);
@@ -99,4 +123,24 @@ gulp.task('default', ['vendor', 'server'], function () {
     initWatch(devWatchList, 'html');
 
     gulp.watch([dist + '/**/*'], reloadPage);
+});
+
+/*
+ * Run tests once
+ */
+gulp.task('test', function(cb) {
+    karmaTask('karma.conf.js', {
+        autoWatch: false,
+        singleRun: true
+    }, cb);
+});
+
+/*
+ * Continuous integration
+ */
+gulp.task('test-dev', function(cb) {
+    karmaTask('karma.conf.js', {
+        autoWatch: true,
+        singleRun: false
+    }, cb);
 });

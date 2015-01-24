@@ -1,8 +1,8 @@
 define (
 [
     'd3',
-    'seqpeek/util/data_adapters',
-    'seqpeek/util/gene_region_utils'
+    './util/data_adapters',
+    './util/gene_region_utils'
 ],
 function (
     d3,
