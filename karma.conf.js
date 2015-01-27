@@ -8,18 +8,19 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
-            //{pattern: 'bower_components/**/*.js', included: false},
+            {pattern: 'bower_components/**/*.js', included: false},
             {pattern: 'src/**/*.js', included: false},
+            {pattern: 'tests/src/*.js', included: false},
             {pattern: 'tests/*Spec.js', included: false},
             {pattern: 'tests/**/*Spec.js', included: false},
-            {pattern: 'tests/**/*.hbs', included: false},
-            'tests/example_config.js'
+            {pattern: 'tests/templates/*.hbs', included: false},
+            {pattern: 'tests/data/**/*.json', included: false},
+            'tests/css/stylesheet.css',
+            'tests/tests_main.js'
         ],
 
         // list of files to exclude
-        exclude: [
-            'src/example_config.js'
-        ],
+        exclude: [ ],
 
         preprocessors: { },
 

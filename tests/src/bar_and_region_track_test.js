@@ -1,176 +1,45 @@
 define   (
 [
     'vq',
-    'examples/testutils',
-    'examples/seqpeek_test',
-    'util/data_adapters',
+    'src/util/testutils',
+    'src/util/data_adapters',
+    'src/builders/builder_for_existing_elements',
+    'tests/src/test_prototype',
 
-    '../builders/builder_for_existing_elements'
+    // Simulated sample data
+    'json!../data/tracks/bar_and_region_track_test_data.json',
 
-],
-function (
+    // Protein domains
+    'json!../data/domains/P04637.json',
+
+    // Regions
+    'json!../data/regions/regions.json'
+], function (
     vq,
 
     TestUtils,
-    SeqPeekTestPrototype,
     DataAdapters,
+    SeqPeekBuilder,
 
-    SeqPeekBuilder
+    SeqPeekTestPrototype,
+
+    TrackData,
+    DomainData,
+    RegionData
 ) {
-    var protein_domain_data = [
-        {
-            "status": "T",
-            "name": "P53_tetramer",
-            "evd": "HMMPfam",
-            "locations": [
-                {
-                    "start": 1000,
-                    "score": 9.299999999999977e-20,
-                    "end": 1100
-                }
-            ],
-            "id": "PF07710",
-            "ipr": {
-                "type": "Domain",
-                "id": "IPR010991",
-                "name": "p53, tetramerisation domain"
-            },
-            "dbname": "PFAM"
-        },
-        {
-            "status": "T",
-            "name": "P53",
-            "evd": "HMMPfam",
-            "locations": [
-                {
-                    "start": 1200,
-                    "score": 1.1000000000000125e-109,
-                    "end": 1300
-                }
-            ],
-            "id": "PF00870",
-            "ipr": {
-                "parent_id": "IPR012346",
-                "type": "Domain",
-                "id": "IPR011615",
-                "name": "p53, DNA-binding domain"
-            },
-            "dbname": "PFAM"
-        },
-        {
-            "status": "T",
-            "name": "P53_TAD",
-            "evd": "HMMPfam",
-            "locations": [
-                {
-                    "start": 1800,
-                    "score": 1.999999999999999e-10,
-                    "end": 6010
-                }
-            ],
-            "id": "PF08563",
-            "ipr": {
-                "type": "Domain",
-                "id": "IPR013872",
-                "name": "p53 transactivation domain"
-            },
-            "dbname": "PFAM"
-        },
-        {
-            "status": "T",
-            "name": "DM14",
-            "evd": "Smart scan",
-            "locations": [
-                {
-                    "start": 950,
-                    "score": 2.4999981195646482e-17,
-                    "end": 1050
-                },
-                {
-                    "start": 1250,
-                    "score": 4.699982625131954e-35,
-                    "end": 1350
-                },
-                {
-                    "start": 1400,
-                    "score": 3.3999997243771875e-35,
-                    "end": 1450
-                }
-            ],
-            "id": "SM00685",
-            "ipr": {
-                "type": "Domain",
-                "id": "IPR006608",
-                "name": "Domain of unknown function DM14"
-            },
-            "dbname": "SMART"
-        }
-    ];
-
-    var protein_metadata = {
-        "uniprot_id": "P04637",
-        "length": 393,
-        "id": "509ae7ad2f2636146b308491",
-        "name": "P53_HUMAN"
-    };
-
-    var generate_region = function(transcript, type, start, end) {
-        return {
-            type: type,
-            start: start,
-            end: end
-        }
-    };
+    var protein_domain_data = DomainData["matches"];
 
     var test_function = function(target_el, $testdiv) {
-        var data_points = TestUtils.generate_test_data([
-            // Coding
-            [9, 900, 'AB', 'false'],
-            [10, 1000, 'AB', 'false'],
-            [10, 1000, 'AB', 'true'],
-
-            [10, 1000, 'XY', 'false'],
-            [10, 1000, 'XY', 'true'],
-
-            [11, 1001, 'XY', 'true'],
-            [12, 1002, 'XY', 'true'],
-            [12, 1002, 'XY', 'true'],
-
-            [20, 1020, 'AB', 'false'],
-            [20, 1020, 'AB', 'false'],
-            [20, 1020, 'AB', 'true'],
-
-            [11, 1300, 'XY', 'true'],
-            [12, 1300, 'XY', 'true'],
-            [12, 1300, 'XY', 'true'],
-
-            [20, 1300, 'AB', 'false'],
-            [20, 1300, 'AB', 'false'],
-            [20, 1300, 'AB', 'true'],
-
-            // Non-coding
-            [30, 3000, 'AB', 'true'],
-            [30, 3000, 'AB', 'true'],
-            [30, 3000, 'AB', 'true'],
-
-            [60, 6050, 'AB', 'false'],
-            [60, 6050, 'CD', 'false']
-        ], {
+        var data_points = TestUtils.generate_test_data(TrackData["items"], {
             protein_loc: 0,
             coordinate: 1,
             variant_type: 2,
             phenotype: 3
         });
 
-        var regions = _.map([
-            ['TEST', 'noncoding', 500, 899],
-            ['TEST', 'exon', 900, 1800],
-            ['TEST', 'noncoding', 2001, 5999],
-            ['TEST', 'exon', 6000, 6200]
-        ], function(p) {
-            return generate_region.apply(this, p);
+        var regions = _.map(RegionData["items"], function(p) {
+            return TestUtils.generate_region.apply(this, p);
         });
-
 
         ////////////////////////////////////////
         // Create SVG elements for all tracks //

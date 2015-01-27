@@ -12,6 +12,7 @@ function (
 ) {
     var Tests = {
         absolute_log2_test: function(target_el) {
+            // /tests/data/examples.json
             var data_points = [
                 [10, 'AB', 'false'],
                 [10, 'AB', 'true'],

@@ -1,25 +1,25 @@
 define   (
 [
-    'examples/testutils',
-    'examples/seqpeek_test',
     'util/data_adapters',
     'util/gene_region_utils',
     'util/region_layouts',
     'seqpeek_viewport',
     'seqpeek_svg_context',
     'variant_layout',
-    '../tracks/bar_plot_track'
+    '/tracks/bar_plot_track',
+    'examples/testutils',
+    'examples/seqpeek_test'
 ],
 function (
-    TestUtils,
-    SeqPeekTestPrototype,
     DataAdapters,
     GeneRegionUtils,
     RegionLayouts,
     ViewportFactory,
     SeqPeekSVGContextFactory,
     VariantLayoutFactory,
-    BarPlotTrackFactory
+    BarPlotTrackFactory,
+    TestUtils,
+    SeqPeekTestPrototype
 ) {
     var generate_region = function(transcript, type, start, end) {
         return {
@@ -32,6 +32,7 @@ function (
     var test_function = function(target_el) {
         var data_points = TestUtils.generate_test_data([
             // Coding
+            // /tests/data/region_test.json
             [10, 1000, 'AB', 'false'],
             [10, 1000, 'AB', 'true'],
 

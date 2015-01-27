@@ -1,12 +1,16 @@
 define([
+    'd3',
     'jquery',
     'underscore',
-    'hbs!./templates/test',
-    'examples/bar_and_region_track_test'
+    'src/util/testutils',
+    'hbs!tests/templates/test',
+    'tests/src/bar_and_region_track_test'
 
 ], function(
+    __d3,
     $,
     _,
+    TestUtils,
     TestTemplate,
     BarAndRegionTrackTest
 ) {

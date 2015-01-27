@@ -1,0 +1,8 @@
+{
+  "items": [
+    ["TEST", "noncoding", 500, 899],
+    ["TEST", "exon", 900, 1800],
+    ["TEST", "noncoding", 2001, 5999],
+    ["TEST", "exon", 6000, 6200]
+  ]
+}

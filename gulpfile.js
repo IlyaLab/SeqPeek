@@ -83,7 +83,7 @@ function compileScripts(watch) {
         var stream = bundler.bundle({ debug: true});
 
         stream.on('error', function (err) {
-            console.error(err)
+            console.error(err);
         });
         stream = stream.pipe(source(entryFile));
 

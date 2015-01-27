@@ -35,6 +35,14 @@ function (
     return {
         generate_test_data: _generate_test_data,
 
+        generate_region: function(transcript, type, start, end) {
+            return {
+                type: type,
+                start: start,
+                end: end
+            }
+        },
+
         build_protein_test_track: function(config) {
             var display_labels = {
                 'true': 'true',
