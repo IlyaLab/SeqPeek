@@ -2,13 +2,15 @@
     "name": "seqpeek",
     "version": "0.0.0",
     "dependencies": {
+        "d3": "~3.2.8",
+        "underscore": "~1.6.0"
+    },
+    "devDependencies": {
         "requirejs": "~2.1.5",
         "requirejs-plugins": "~1.0.3",
         "requirejs-text": "~2.0.10",
         "require-handlebars-plugin": "git://github.com/SlexAxton/require-handlebars-plugin.git#~0.4.0",
         "jquery": "~2.1.1",
-        "d3": "~3.2.8",
-        "underscore": "~1.6.0",
         "font-awesome": "~3.2.1",
         "handlebars": "git://github.com/components/handlebars.js#~1.0.0",
         "visquick": "~0.1.2"

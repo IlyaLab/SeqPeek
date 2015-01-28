@@ -96,22 +96,7 @@ function (
             'exon': 'lightgray',
             'noncoding': 'gray'
         },
-        height: REGION_TRACK_HEIGHT,
-        hovercard_config: {
-            include_header: false,
-            include_footer: true,
-            self_hover: true,
-            timeout: 200,
-            tool_config: []
-        },
-        hovercard_content: {
-            "Coordinates": function(d) {
-                return d.start + " - " + d.end;
-            },
-            "Type": function(d) {
-                return d.type;
-            }
-        }
+        height: REGION_TRACK_HEIGHT
     };
 
     var DEFAULT_TICK_TRACK_CONFIG = {

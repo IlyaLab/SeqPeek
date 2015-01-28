@@ -1,30 +1,16 @@
 define   (
 [
-    'd3',
-    'underscore',
-
     '../util/data_adapters',
 
     './track_prototype'
 ],
 function(
-    d3,
-    _,
     DataAdapters,
     SeqPeekTrackPrototype
 ) {
     var RegionTrackPrototype = {
-        _buildHovercardHandler: function() {
-            var handler_params = _.extend(this.config.hovercard.config, {
-                canvas_id: this.config.guid,
-                data_config: this.config.hovercard.content
-            });
-
-            if (this.config.hovercard.enable_tools) {
-                handler_params.tool_config = this.config.hovercard.links;
-            }
-
-            return vq.hovercard(handler_params);
+        _getHandlerData: function(datum) {
+            return _.pick(datum, 'start', 'end', 'type');
         },
 
         _applySVG: function() {
@@ -39,13 +25,11 @@ function(
                         return "region " + d.type
                     });
 
-            if (this.config.hovercard.enable || this.config.hovercard.enable_tools) {
-                var handler = this._buildHovercardHandler();
-
+            if (this.config.mouseover.handler !== null) {
                 regions_g
                     .each(function() {
                         d3.select(this).on("mouseover", function(d) {
-                            handler.call(this, d);
+                            self.config.mouseover.handler(this, self._getHandlerData(d));
                         });
                     });
             }
@@ -135,25 +119,13 @@ function(
             return this;
         },
 
-        hovercard_config: function(value) {
-            this.config.hovercard.config = value;
-
-            return this;
+        ///////////////
+        // Event API //
+        ///////////////
+        mouseover_handler: function(value) {
+            this.config.mouseover.handler = value;
         },
 
-        hovercard_content: function(value) {
-            this.config.hovercard.enable = true;
-            this.config.hovercard.content = value;
-
-            return this;
-        },
-
-        hovercard_links: function(value) {
-            this.config.hovercard.enable_tools = true;
-            this.config.hovercard.links = value;
-
-            return this;
-        },
         ///////////////
         // Brush API //
         ///////////////
@@ -190,9 +162,8 @@ function(
         create: function() {
             var track = Object.create(track_proto, {});
             track.config = {
-                hovercard: {
-                    enable: false,
-                    enable_tools: false
+                mouseover: {
+                    handler: null
                 }
             };
             return track;

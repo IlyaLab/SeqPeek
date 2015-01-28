@@ -8,6 +8,12 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
+            // CSS
+            'tests/css/stylesheet.css',
+            'bower_components/font-awesome/css/font-awesome.css',
+            'bower_components/visquick/assets/css/vq.css',
+
+            // JavaScript
             {pattern: 'bower_components/**/*.js', included: false},
             {pattern: 'src/**/*.js', included: false},
             {pattern: 'tests/src/*.js', included: false},
@@ -15,7 +21,6 @@ module.exports = function(config) {
             {pattern: 'tests/**/*Spec.js', included: false},
             {pattern: 'tests/templates/*.hbs', included: false},
             {pattern: 'tests/data/**/*.json', included: false},
-            'tests/css/stylesheet.css',
             'tests/tests_main.js'
         ],
 

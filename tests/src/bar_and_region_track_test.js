@@ -49,7 +49,7 @@ define   (
             .append("svg")
             .attr("width", 1300)
             .attr("height", 150 + 150 + 70)
-                .attr("id", container_guid)
+            //.attr("id", container_guid)
 
             .style("pointer-events", "none");
 
@@ -156,19 +156,11 @@ define   (
             }
         });
 
-        seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg, {
-            guid: container_guid
-        });
-        seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg, {
-            guid: container_guid
-        });
-        seqpeek.addRegionScaleTrackToElement(region_track_svg, {
-            guid: container_guid
-        });
+        seqpeek.addBarPlotTrackWithArrayData(data_points, bar_plot_track_svg, { });
+        seqpeek.addSamplePlotTrackWithArrayData(data_points, lollipop_track_svg, { });
+        seqpeek.addRegionScaleTrackToElement(region_track_svg, { });
         seqpeek.addTickTrackToElement(tick_track_svg);
-        seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg, {
-            guid: container_guid
-        });
+        seqpeek.addProteinDomainTrackToElement(protein_domain_data, protein_domain_track_svg, { });
 
         seqpeek.createInstances();
 
