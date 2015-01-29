@@ -7,7 +7,7 @@ define   (
     'util/region_layouts',
     'seqpeek_viewport',
     'seqpeek_svg_context',
-    '../tracks/region_scale_track'
+    'tracks/region_scale_track'
 ],
 function (
     TestUtils,

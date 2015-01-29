@@ -2,58 +2,52 @@
 
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var concat = require('gulp-concat');
+var concat_sourcemap = require('gulp-concat-sourcemap');
+var express = require('express');
 
-var livereload = require('gulp-livereload');
+var amd_optimize = require('gulp-amd-optimizer');
+
 var karma = require('karma');
 var karmaParseConfig = require('karma/lib/config').parseConfig;
-var rename = require('gulp-rename');
-var browserify = require('browserify');
 var path = require('path');
-var watchify = require('watchify');
 var source = require('vinyl-source-stream');
+var tinylr = require('tiny-lr');
 
+var _ = require("underscore");
+
+var logger = gutil.log;
 
 /** Config variables */
-var serverPort = 9010;
-var lrPort = 35731;
+var SERVER_PORT = 9010;
+var LIVERELOAD_PORT = 35731;
 
 
-/** File paths */
-var dist = 'dist';
+var express_root = './';
+logger("Express server root: " + express_root);
 
 var htmlFiles = [
-    '/examples/index.html',
-    'src/examples/*.js'
+    '/src/index.html'
 ];
 
-var devWatchList = [
+var developmentWatchList = [
     htmlFiles,
     'src/**/*.js'
 ];
 
-var htmlBuild = dist;
+/** File paths */
+var distBuildPath = 'dist';
 
 var vendorFiles = [ ];
-var vendorBuild = dist + '/vendor';
+var vendorBuildPath = distBuildPath + '/vendor';
 
-var lr = undefined;
+var servers = null;
 
-gulp.task('vendor', function () {
-    return gulp.src(vendorFiles).
-        pipe(gulp.dest(vendorBuild));
-});
-
-
-gulp.task('html', function () {
-    return gulp.src(htmlFiles).
-        pipe(gulp.dest(htmlBuild));
-});
-
-function karmaTask(configFilePath, options, cb) {
+var karmaTask = function(configFilePath, options, cb) {
     configFilePath = path.resolve(configFilePath);
 
     var server = karma.server;
-    var log=gutil.log, colors=gutil.colors;
+    var colors=gutil.colors;
     var config = karmaParseConfig(configFilePath, {});
 
     Object.keys(options).forEach(function(key) {
@@ -61,57 +55,94 @@ function karmaTask(configFilePath, options, cb) {
     });
 
     server.start(config, function(exitCode) {
-        log('Karma has exited with ' + colors.red(exitCode));
+        logger('Karma has exited with ' + colors.red(exitCode));
         cb();
         process.exit(exitCode);
     });
-}
+};
 
-function compileScripts(watch) {
-    gutil.log('Starting browserify');
-
-    var entryFile = './src/example_config.js';
-
-    var bundler;
-    if (watch) {
-        bundler = watchify(entryFile);
-    } else {
-        bundler = browserify(entryFile);
-    }
-
-    var rebundle = function () {
-        var stream = bundler.bundle({ debug: true});
-
-        stream.on('error', function (err) {
-            console.error(err);
-        });
-        stream = stream.pipe(source(entryFile));
-
-        stream.pipe(gulp.dest('dist/bundle'));
+var distWithDependencies = function() {
+    var requireConfig = {
+        baseUrl: 'src',
+        paths: {
+            d3: '../bower_components/d3/d3',
+            underscore: '../bower_components/underscore/underscore'
+        }
     };
 
-    bundler.on('update', rebundle);
-    return rebundle();
+    var options = {
+        umd: false
+    };
+
+    logger('Running gulp-amd-optimizer...');
+    return gulp.src('src/builders/builder_for_existing_elements.js', {base: requireConfig.baseUrl})
+        .pipe(amd_optimize(requireConfig, options))
+        .on("error", function(message) {
+            logger(message);
+        })
+        .pipe(concat('seqpeek_builder.js'))
+        .pipe(gulp.dest('./'));
 }
 
+var createAppServerAndLiveReload = function(app_port, lr_port) {
+    var livereload = tinylr();
+    livereload.listen(lr_port, function() {
+        logger('LR Listening on', lr_port);
+    });
 
-gulp.task('server', function (next) {
-    var app;
-    app = express();
-    app.use(livereload());
-    app.use(express["static"](express_root));
-    app.listen(express_port);
-    lr = tinylr();
-    lr.listen(livereload_port);
+    var app = express();
+
+    var express_paths = [
+        ['/', express_root],
+        ['/bower_components', 'bower_components'],
+        ['/src', 'src']
+    ];
+
+    _.each(express_paths, function(route) {
+        var uri = route[0];
+        var dir_path = route[1];
+        logger("Express route: " + uri + " -> " + dir_path);
+        app.use(uri, express.static(path.resolve(dir_path)));
+    });
+
+    app.listen(app_port, function() {
+        logger('Express server listening on', app_port);
+    });
+
+    return {
+        lr: livereload,
+        app: app
+    };
+};
+
+gulp.task('vendor', function () {
+    return gulp.src(vendorFiles).
+        pipe(gulp.dest(vendorBuildPath));
+});
+
+gulp.task('html', function () {
+    return gulp.src(htmlFiles).
+        pipe(gulp.dest(distBuildPath));
+});
+
+gulp.task('build-seqpeek', function() {
+    return distWithDependencies();
+});
+
+gulp.task('concat', function() {
+    gulp.src(['./src/**/*.js', '!./src/demo_main.js'])
+        .pipe(concat('seqpeek.js'))
+        .pipe(gulp.dest('./'));
 });
 
 /**
- * Run default task
+ * Default task - build and watch the demo application
  */
-gulp.task('default', ['server'], function () {
-    var lrServer = livereload(lrPort);
+gulp.task('default', ['vendor'], function () {
+    servers = createAppServerAndLiveReload(SERVER_PORT, LIVERELOAD_PORT);
+
     var reloadPage = function (evt) {
-        lrServer.changed(evt.path);
+        servers.lr.changed(evt.path);
     };
 
     function initWatch(files, task) {
@@ -119,10 +150,10 @@ gulp.task('default', ['server'], function () {
         gulp.watch(files, [task]);
     }
 
-    compileScripts(true);
-    initWatch(devWatchList, 'html');
 
-    gulp.watch([dist + '/**/*'], reloadPage);
+    initWatch(developmentWatchList, 'html');
+
+    gulp.watch(['src/**/*'], reloadPage);
 });
 
 /*

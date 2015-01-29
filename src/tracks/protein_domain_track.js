@@ -2,7 +2,6 @@ define   (
 [
     'd3',
     'underscore',
-    'vq',
 
     '../util/data_adapters',
 

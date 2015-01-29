@@ -3,7 +3,6 @@ define([
     'vq',
     'jquery',
     'underscore',
-    'src/util/testutils',
     'hbs!tests/templates/test',
     'tests/src/regions_and_domains_test'
 
@@ -12,7 +11,6 @@ define([
     vq,
     $,
     _,
-    TestUtils,
     TestTemplate,
     SeqPeekTestObject
 ) {

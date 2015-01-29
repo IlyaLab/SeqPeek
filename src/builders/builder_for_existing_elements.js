@@ -47,19 +47,7 @@ function (
             max_height: BAR_PLOT_TRACK_MAX_HEIGHT - 30,
             scaling_factor: 200
         },
-        category_totals: {},
-        hovercard_config: {
-            include_header: false,
-            include_footer: true,
-            self_hover: true,
-            timeout: 200,
-            tool_config: []
-        },
-        hovercard_content: {
-            "key": function(d) {
-                return "value";
-            }
-        }
+        category_totals: {}
     };
 
     var DEFAULT_SAMPLE_PLOT_TRACK_CONFIG = {
@@ -68,19 +56,7 @@ function (
         },
         glyph_width: 5.0,
         height: SAMPLE_PLOT_TRACK_MAX_HEIGHT,
-        stem_height: 30.0,
-        hovercard_config: {
-            include_header: false,
-            include_footer: true,
-            self_hover: true,
-            timeout: 200,
-            tool_config: []
-        },
-        hovercard_content: {
-            "key": function(d) {
-                return "value";
-            }
-        }
+        stem_height: 30.0
     };
 
     var DEFAULT_REGION_LAYOUT_CONFIG = {
@@ -110,33 +86,6 @@ function (
         height: 40,
         color_scheme: {
             'all': 'gray'
-        },
-        hovercard_config: {
-            include_header: false,
-            include_footer: true,
-            self_hover: true,
-            timeout: 200,
-            tool_config: []
-        },
-        hovercard_content: {
-            "DB": function(d) {
-                return d.dbname;
-            },
-            "EVD": function(d) {
-                return d.evd;
-            },
-            "ID": function(d) {
-                return d.id;
-            },
-            "Name": function(d) {
-                return d.name;
-            },
-            "Status": function(d) {
-                return d.status;
-            },
-            "LOC": function(d) {
-                return d.start + " - " + d.end;
-            }
         }
     };
 
