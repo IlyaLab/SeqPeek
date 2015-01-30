@@ -1,13 +1,7 @@
 define   (
 [
-    'd3',
-    'vq',
-    'underscore'
 ],
 function(
-    d3,
-    vq,
-    _
 ) {
     var BRUSH_COLOR = "#EEEEEE";
     var BRUSH_STROKE_COLOR = "red";

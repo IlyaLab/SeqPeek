@@ -1,17 +1,12 @@
 define   (
 [
-    'd3',
-    'underscore',
+    'util/data_adapters',
+    'util/gene_region_utils',
+    'seqpeek_scaling',
 
-    '../util/data_adapters',
-    '../util/gene_region_utils',
-    '../seqpeek_scaling',
-
-    './track_prototype'
+    'tracks/track_prototype'
 ],
 function(
-    d3,
-    _,
     DataAdapters,
     GeneRegionUtils,
     ScalingFunctions,

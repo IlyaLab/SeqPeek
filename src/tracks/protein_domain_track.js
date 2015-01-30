@@ -1,11 +1,8 @@
 define   (
 [
-    'd3',
-    'underscore',
+    'util/data_adapters',
 
-    '../util/data_adapters',
-
-    './track_prototype'
+    'tracks/track_prototype'
 ],
 function(
     d3,

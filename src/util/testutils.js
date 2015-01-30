@@ -1,6 +1,6 @@
 define   (
 [
-    '../util/gene_region_utils'
+    'util/gene_region_utils'
 ],
 function (
     GeneRegionUtils

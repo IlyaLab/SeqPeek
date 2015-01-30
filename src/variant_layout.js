@@ -1,11 +1,9 @@
 define (
 [
-    'd3',
-    './util/data_adapters',
-    './util/gene_region_utils'
+    'util/data_adapters',
+    'util/gene_region_utils'
 ],
 function (
-    d3,
     DataAdapters,
     GeneRegionUtils
 ) {

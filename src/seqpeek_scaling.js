@@ -1,10 +1,8 @@
-define([
-    'd3',
-    'underscore'
+define(
+[
+
 ],
 function(
-    d3,
-    _
 ) {
     var _getColor = function(group_name, type_name, color_info) {
         if (_.isFunction(color_info)) {

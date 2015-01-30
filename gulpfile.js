@@ -3,17 +3,14 @@
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var concat = require('gulp-concat');
-var concat_sourcemap = require('gulp-concat-sourcemap');
 var express = require('express');
-
 var amd_optimize = require('gulp-amd-optimizer');
-
 var karma = require('karma');
 var karmaParseConfig = require('karma/lib/config').parseConfig;
 var path = require('path');
 var source = require('vinyl-source-stream');
 var tinylr = require('tiny-lr');
-
+var wrap_umd = require('gulp-wrap-umd');
 var _ = require("underscore");
 
 var logger = gutil.log;
@@ -27,7 +24,7 @@ var express_root = './';
 logger("Express server root: " + express_root);
 
 var htmlFiles = [
-    '/src/index.html'
+
 ];
 
 var developmentWatchList = [
@@ -60,29 +57,6 @@ var karmaTask = function(configFilePath, options, cb) {
         process.exit(exitCode);
     });
 };
-
-var distWithDependencies = function() {
-    var requireConfig = {
-        baseUrl: 'src',
-        paths: {
-            d3: '../bower_components/d3/d3',
-            underscore: '../bower_components/underscore/underscore'
-        }
-    };
-
-    var options = {
-        umd: false
-    };
-
-    logger('Running gulp-amd-optimizer...');
-    return gulp.src('src/builders/builder_for_existing_elements.js', {base: requireConfig.baseUrl})
-        .pipe(amd_optimize(requireConfig, options))
-        .on("error", function(message) {
-            logger(message);
-        })
-        .pipe(concat('seqpeek_builder.js'))
-        .pipe(gulp.dest('./'));
-}
 
 var createAppServerAndLiveReload = function(app_port, lr_port) {
     var livereload = tinylr();
@@ -125,16 +99,6 @@ gulp.task('html', function () {
         pipe(gulp.dest(distBuildPath));
 });
 
-gulp.task('build-seqpeek', function() {
-    return distWithDependencies();
-});
-
-gulp.task('concat', function() {
-    gulp.src(['./src/**/*.js', '!./src/demo_main.js'])
-        .pipe(concat('seqpeek.js'))
-        .pipe(gulp.dest('./'));
-});
-
 /**
  * Default task - build and watch the demo application
  */
@@ -149,7 +113,6 @@ gulp.task('default', ['vendor'], function () {
         gulp.start(task);
         gulp.watch(files, [task]);
     }
-
 
     initWatch(developmentWatchList, 'html');
 

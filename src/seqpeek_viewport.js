@@ -1,9 +1,7 @@
 define   (
 [
-    'd3'
 ],
 function (
-    d3
 ) {
     var prototype = {
         _getCoordinateFromScaleLocation: function(x) {

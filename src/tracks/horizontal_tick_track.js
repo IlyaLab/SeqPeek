@@ -1,13 +1,8 @@
 define (
 [
-    'd3',
-    'underscore',
-
-    './track_prototype'
+    'tracks/track_prototype'
 ],
 function(
-    d3,
-    _,
     SeqPeekTrackPrototype
 ) {
     var LocationDisplayTrackPrototype = Object.create({

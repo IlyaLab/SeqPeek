@@ -1,16 +1,11 @@
 define   (
 [
-    'd3',
-    'underscore',
+    'util/data_adapters',
+    'util/gene_region_utils',
 
-    '../util/data_adapters',
-    '../util/gene_region_utils',
-
-    './track_prototype'
+    'tracks/track_prototype'
 ],
 function(
-    d3,
-    _,
     DataAdapters,
     GeneRegionUtils,
 

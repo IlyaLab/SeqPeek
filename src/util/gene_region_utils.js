@@ -1,9 +1,7 @@
 define([
-    'underscore',
-    './data_adapters'
+    'util/data_adapters'
 ],
 function(
-    _,
     DataAdapters
 ) {
     var build_region_common = function(start, end) {
