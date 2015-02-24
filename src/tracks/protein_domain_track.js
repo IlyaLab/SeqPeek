@@ -1,14 +1,10 @@
 define   (
 [
-    'util/data_adapters',
+    '../util/data_adapters',
 
-    'tracks/track_prototype'
+    './track_prototype'
 ],
 function(
-    d3,
-    _,
-    vq,
-
     DataAdapters,
 
     SeqPeekTrackPrototype

@@ -1,7 +1,7 @@
 define (
 [
-    'util/data_adapters',
-    'util/gene_region_utils'
+    './util/data_adapters',
+    './util/gene_region_utils'
 ],
 function (
     DataAdapters,

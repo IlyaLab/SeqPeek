@@ -1,5 +1,5 @@
 define([
-    'util/data_adapters'
+    './data_adapters'
 ],
 function(
     DataAdapters

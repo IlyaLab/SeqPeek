@@ -1,11 +1,8 @@
-define   (
-[
-    'd3',
-    'underscore'
-],
+define([
+
+    ],
 function(
-    d3,
-    _
+
 ) {
     // Default colors
     var DEFAULT_EXON_REGION_FILL = "rgba(170,170,170,1)";

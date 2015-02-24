@@ -1,6 +1,6 @@
 define (
 [
-    'tracks/track_prototype'
+    './track_prototype'
 ],
 function(
     SeqPeekTrackPrototype

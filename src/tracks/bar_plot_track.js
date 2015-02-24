@@ -1,10 +1,10 @@
 define   (
 [
-    'util/data_adapters',
-    'util/gene_region_utils',
-    'seqpeek_scaling',
+    '../util/data_adapters',
+    '../util/gene_region_utils',
+    '../seqpeek_scaling',
 
-    'tracks/track_prototype'
+    './track_prototype'
 ],
 function(
     DataAdapters,

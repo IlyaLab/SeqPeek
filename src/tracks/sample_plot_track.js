@@ -1,9 +1,9 @@
 define   (
 [
-    'util/data_adapters',
-    'util/gene_region_utils',
+    '../util/data_adapters',
+    '../util/gene_region_utils',
 
-    'tracks/track_prototype'
+    './track_prototype'
 ],
 function(
     DataAdapters,

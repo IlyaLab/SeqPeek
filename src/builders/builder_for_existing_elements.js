@@ -1,16 +1,16 @@
 define   (
 [
-    'util/data_adapters',
-    'util/gene_region_utils',
-    'util/region_layouts',
-    'seqpeek_viewport',
-    'seqpeek_svg_context',
-    'variant_layout',
-    'tracks/bar_plot_track',
-    'tracks/sample_plot_track',
-    'tracks/region_scale_track',
-    'tracks/horizontal_tick_track',
-    'tracks/protein_domain_track'
+    '../util/data_adapters',
+    '../util/gene_region_utils',
+    '../util/region_layouts',
+    '../seqpeek_viewport',
+    '../seqpeek_svg_context',
+    '../variant_layout',
+    '../tracks/bar_plot_track',
+    '../tracks/sample_plot_track',
+    '../tracks/region_scale_track',
+    '../tracks/horizontal_tick_track',
+    '../tracks/protein_domain_track'
 ],
 function (
     DataAdapters,
